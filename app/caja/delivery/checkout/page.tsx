@@ -42,7 +42,7 @@ export default function CajaDeliveryCheckoutPage() {
     const payload = {
       mesa_id: null,
       mesa_numero: "DELIVERY",
-      mozo_id: "00000000-0000-0000-0000-000000000000", // UID genérico, o buscar el ID del cajero real si hubiera Auth
+      mozo_id: "", // Para que el RPC lo convierta en NULL y evite error de Foreign Key
       mozo_nombre: "Cajero",
       tipo_pedido: "delivery",
       total: calcularTotal(),
