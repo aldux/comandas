@@ -12,7 +12,8 @@ import {
   Printer, 
   Download, 
   Loader2,
-  FileText
+  FileText,
+  ArchiveX
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -183,6 +184,26 @@ export default function VentasPage() {
     doc.save(fileName);
   };
 
+  const handleArchivar = async () => {
+    if (ventas.length === 0) {
+      alert("No hay ventas activas para archivar.");
+      return;
+    }
+    
+    if (window.confirm("¿Estás seguro de CERRAR LA CAJA? Esto archivará todas las ventas mostradas y dejará los contadores en cero para el próximo turno. (Te recomendamos Exportar el PDF o Imprimir primero)")) {
+      setLoading(true);
+      const { archivarVentasDia } = await import("@/acciones/caja");
+      const res = await archivarVentasDia();
+      if (res.success) {
+        alert("¡Caja cerrada! Historial archivado correctamente.");
+        fetchVentasHoy();
+      } else {
+        alert("Error: " + res.error);
+        setLoading(false);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -200,6 +221,15 @@ export default function VentasPage() {
         </div>
         
         <div className="flex gap-3">
+          <button 
+            onClick={handleArchivar}
+            disabled={ventas.length === 0}
+            className="flex items-center gap-2 bg-red-900/50 hover:bg-red-800/60 text-red-200 px-4 py-2.5 rounded-lg font-medium transition-all border border-red-800 disabled:opacity-50"
+          >
+            <ArchiveX size={18} />
+            Cerrar Caja
+          </button>
+
           <button 
             onClick={handleExportarPDF}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-4 py-2.5 rounded-lg font-medium transition-all shadow-lg"

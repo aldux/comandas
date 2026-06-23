@@ -82,3 +82,22 @@ export async function entregarDelivery(pedidoId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function archivarVentasDia() {
+  try {
+    // Archivar todos los pedidos que estén cobrados o finalizados
+    const { error } = await supabase
+      .from('pedidos')
+      .update({ estado: 'archivado' })
+      .in('estado', ['cobrado', 'finalizado']);
+
+    if (error) {
+      console.error("Error al archivar ventas:", error);
+      return { success: false, error: 'Error al archivar el historial' };
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
