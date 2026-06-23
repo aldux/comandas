@@ -65,3 +65,20 @@ export async function liberarMesa(pedidoId: string, mesaId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function entregarDelivery(pedidoId: string) {
+  try {
+    const { error } = await supabase
+      .from('pedidos')
+      .update({
+        estado: 'finalizado',
+        metodo_pago: 'app_delivery'
+      })
+      .eq('id', pedidoId);
+
+    if (error) return { success: false, error: 'Error al entregar delivery' };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

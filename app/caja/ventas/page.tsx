@@ -42,6 +42,7 @@ export default function VentasPage() {
     efectivo: 0,
     tpv: 0,
     bizum: 0,
+    app_delivery: 0,
     cantidad: 0
   });
 
@@ -78,12 +79,14 @@ export default function VentasPage() {
       let efectivo = 0;
       let tpv = 0;
       let bizum = 0;
+      let appDelivery = 0;
 
       data.forEach(v => {
         bruto += Number(v.total);
         if (v.metodo_pago === 'efectivo') efectivo += Number(v.total);
         if (v.metodo_pago === 'tarjeta_tpv') tpv += Number(v.total);
         if (v.metodo_pago === 'bizum') bizum += Number(v.total);
+        if (v.metodo_pago === 'app_delivery') appDelivery += Number(v.total);
       });
 
       setTotales({
@@ -91,6 +94,7 @@ export default function VentasPage() {
         efectivo,
         tpv,
         bizum,
+        app_delivery: appDelivery,
         cantidad: data.length
       });
     }
@@ -231,6 +235,15 @@ export default function VentasPage() {
             <Smartphone size={20} className="text-indigo-400" />
           </div>
           <p className="text-2xl font-bold text-zinc-100">€{totales.bizum.toFixed(2)}</p>
+        </div>
+
+        {/* Apps Delivery */}
+        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex flex-col gap-2">
+          <div className="flex justify-between items-center text-zinc-400">
+            <span className="font-medium text-sm uppercase tracking-wider">Apps Delivery</span>
+            <span className="text-2xl">🛵</span>
+          </div>
+          <p className="text-2xl font-bold text-zinc-100">€{(totales.app_delivery || 0).toFixed(2)}</p>
         </div>
       </div>
 

@@ -191,7 +191,7 @@ export default function CajaDashboard() {
                     <p className="text-2xl font-bold text-zinc-100">${pedido.total.toFixed(2)}</p>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {pedido.estado === 'cobrado' ? (
+                    {pedido.estado === 'cobrado' && pedido.tipo_pedido !== 'delivery' ? (
                       <button 
                         onClick={async () => {
                           const { liberarMesa } = await import("@/acciones/caja");
@@ -205,12 +205,28 @@ export default function CajaDashboard() {
                       </button>
                     ) : (
                       <>
-                        <button 
-                          onClick={() => openCobroModal(pedido)}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
-                        >
-                          Cobrar
-                        </button>
+                        {pedido.tipo_pedido === 'delivery' ? (
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm("¿Marcar este delivery como entregado al repartidor? Se sumará a las ventas de hoy.")) {
+                                const { entregarDelivery } = await import("@/acciones/caja");
+                                const res = await entregarDelivery(pedido.id);
+                                if (!res.success) alert(res.error);
+                                else fetchData();
+                              }
+                            }}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
+                          >
+                            Entregado
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => openCobroModal(pedido)}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
+                          >
+                            Cobrar
+                          </button>
+                        )}
                         <button 
                           onClick={async () => {
                             if (window.confirm("¿Estás seguro de anular este pedido? Esta acción no se puede deshacer.")) {
