@@ -10,11 +10,14 @@ export default function MesasPage() {
   const { mozoActivo, setMozo, setMesa } = useAppStore();
 
   // Redirigir a login si no hay mozo activo
-  if (!mozoActivo) {
-    if (typeof window !== "undefined") {
+  React.useEffect(() => {
+    if (!mozoActivo) {
       router.push("/mozo/login");
     }
-    return null;
+  }, [mozoActivo, router]);
+
+  if (!mozoActivo) {
+    return null; // Evitar renderizado mientras redirige
   }
 
   const [mesas, setMesas] = React.useState<any[]>([]);
