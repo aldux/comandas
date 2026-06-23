@@ -72,4 +72,4 @@ EXCEPTION WHEN OTHERS THEN
     -- Lanzamos la excepción para que el cliente (Next.js) reciba el error.
     RAISE;
 END;
-$$ LANGUAGE plpgsql SECURITY INVOKER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
