@@ -62,11 +62,11 @@ export default function CajaDashboard() {
     const { data: mesasData } = await supabase.from('mesas').select('*').order('numero');
     if (mesasData) setMesas(mesasData);
 
-    // Obtener pedidos activos (preparando o listo)
+    // Obtener pedidos activos (preparando, listo o cobrado)
     const { data: pedidosData } = await supabase
       .from('pedidos')
       .select('*, mesas(numero)')
-      .in('estado', ['preparando', 'listo'])
+      .in('estado', ['preparando', 'listo', 'cobrado'])
       .order('created_at', { ascending: false });
       
     if (pedidosData) setPedidos(pedidosData);
@@ -168,29 +168,45 @@ export default function CajaDashboard() {
                 
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                   <div className="text-right flex-1 sm:flex-none">
-                    <p className="text-xs text-zinc-400">Total a cobrar</p>
+                    <p className="text-xs text-zinc-400">Total</p>
                     <p className="text-2xl font-bold text-zinc-100">${pedido.total.toFixed(2)}</p>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => openCobroModal(pedido)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
-                    >
-                      Cobrar
-                    </button>
-                    <button 
-                      onClick={async () => {
-                        if (window.confirm("¿Estás seguro de anular este pedido? Esta acción no se puede deshacer.")) {
-                          const { anularPedido } = await import("@/acciones/caja");
-                          const res = await anularPedido(pedido.id, pedido.mesa_id);
+                    {pedido.estado === 'cobrado' ? (
+                      <button 
+                        onClick={async () => {
+                          const { liberarMesa } = await import("@/acciones/caja");
+                          const res = await liberarMesa(pedido.id, pedido.mesa_id);
                           if (!res.success) alert(res.error);
                           else fetchData();
-                        }
-                      }}
-                      className="bg-zinc-800 hover:bg-red-900/60 text-zinc-300 hover:text-red-400 font-semibold py-1.5 px-6 rounded-xl transition-colors text-sm border border-zinc-700 hover:border-red-900/50"
-                    >
-                      Anular
-                    </button>
+                        }}
+                        className="bg-zinc-100 hover:bg-zinc-300 text-zinc-900 font-bold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
+                      >
+                        Liberar Mesa
+                      </button>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => openCobroModal(pedido)}
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
+                        >
+                          Cobrar
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (window.confirm("¿Estás seguro de anular este pedido? Esta acción no se puede deshacer.")) {
+                              const { anularPedido } = await import("@/acciones/caja");
+                              const res = await anularPedido(pedido.id, pedido.mesa_id);
+                              if (!res.success) alert(res.error);
+                              else fetchData();
+                            }
+                          }}
+                          className="bg-zinc-800 hover:bg-red-900/60 text-zinc-300 hover:text-red-400 font-semibold py-1.5 px-6 rounded-xl transition-colors text-sm border border-zinc-700 hover:border-red-900/50"
+                        >
+                          Anular
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -214,7 +230,7 @@ export default function CajaDashboard() {
                 <div className="flex flex-col items-center justify-center py-8 text-emerald-500">
                   <CheckCircle2 size={64} className="mb-4" />
                   <h4 className="text-xl font-bold text-zinc-100">¡Cobro Registrado!</h4>
-                  <p className="text-zinc-400 mt-1">La mesa ha sido liberada.</p>
+                  <p className="text-zinc-400 mt-1 text-center text-sm px-4">El pedido ha sido marcado como pagado. Recuerde liberar la mesa luego.</p>
                 </div>
               ) : isProcessing ? (
                 <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
