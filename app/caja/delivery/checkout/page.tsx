@@ -60,7 +60,6 @@ export default function CajaDeliveryCheckoutPage() {
 
     if (resultado.success) {
       setOrderSuccess(true);
-      limpiarCarrito();
       setTimeout(() => {
         router.push("/caja/dashboard");
       }, 2000);
