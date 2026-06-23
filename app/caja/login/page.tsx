@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
 
 export default function CajaLogin() {
   const router = useRouter();
+  const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ export default function CajaLogin() {
     setLoading(true);
     setError("");
 
-    // Autenticación real contra Supabase Auth
+    // Autenticación real contra Supabase Auth usando SSR browser client
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
