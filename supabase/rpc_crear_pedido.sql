@@ -15,16 +15,19 @@ DECLARE
     v_total NUMERIC;
 BEGIN
     -- 1. Insertar el pedido principal
-    INSERT INTO pedidos (mesa_id, mozo_id, estado, total)
+    INSERT INTO pedidos (mesa_id, mozo_id, estado, total, tipo_pedido)
     VALUES (
-        (payload->>'mesa_id')::UUID,
-        (payload->>'mozo_id')::UUID,
+        NULLIF((payload->>'mesa_id'), '')::UUID,
+        NULLIF((payload->>'mozo_id'), '')::UUID,
         'preparando',
-        (payload->>'total')::NUMERIC
+        (payload->>'total')::NUMERIC,
+        COALESCE(payload->>'tipo_pedido', 'local')
     ) RETURNING id INTO v_pedido_id;
 
-    -- Cambiar estado de la mesa a ocupada
-    UPDATE mesas SET estado = 'ocupada' WHERE id = (payload->>'mesa_id')::UUID;
+    -- Cambiar estado de la mesa a ocupada solo si hay mesa
+    IF NULLIF(payload->>'mesa_id', '') IS NOT NULL THEN
+        UPDATE mesas SET estado = 'ocupada' WHERE id = (payload->>'mesa_id')::UUID;
+    END IF;
 
     -- 2. Recorrer e Insertar los ítems del pedido
     FOR v_item IN SELECT * FROM jsonb_array_elements(payload->'items')
@@ -41,7 +44,11 @@ BEGIN
 
     -- 3. Generar Ticket de Impresión para la cocina
     v_ticket_texto := '--- NUEVO PEDIDO ---' || E'\n';
-    v_ticket_texto := v_ticket_texto || 'MESA: ' || (payload->>'mesa_numero') || ' | MOZO: ' || (payload->>'mozo_nombre') || E'\n';
+    IF COALESCE(payload->>'tipo_pedido', 'local') = 'delivery' THEN
+        v_ticket_texto := v_ticket_texto || 'TIPO: 🛵 DELIVERY | CAJERO: ' || (payload->>'mozo_nombre') || E'\n';
+    ELSE
+        v_ticket_texto := v_ticket_texto || 'MESA: ' || (payload->>'mesa_numero') || ' | MOZO: ' || (payload->>'mozo_nombre') || E'\n';
+    END IF;
     v_ticket_texto := v_ticket_texto || '--------------------' || E'\n';
 
     FOR v_item IN SELECT * FROM jsonb_array_elements(payload->'items')

@@ -57,8 +57,46 @@ export default function MesasPage() {
     };
   }, []);
 
-  const handleSelectMesa = (mesa: { id: string; numero: number }) => {
-    setMesa(mesa);
+  const [mesaOcupadaSeleccionada, setMesaOcupadaSeleccionada] = React.useState<any | null>(null);
+
+  const handleSelectMesa = (mesa: { id: string; numero: number; estado: string }) => {
+    if (mesa.estado === "ocupada") {
+      setMesaOcupadaSeleccionada(mesa);
+    } else {
+      setMesa(mesa);
+      router.push("/mozo/menu");
+    }
+  };
+
+  const handleMarcarEntregado = async () => {
+    if (!mesaOcupadaSeleccionada) return;
+    const { supabase } = await import("@/lib/supabase");
+    
+    // Buscar el pedido activo de esta mesa
+    const { data: pedido } = await supabase
+      .from('pedidos')
+      .select('id')
+      .eq('mesa_id', mesaOcupadaSeleccionada.id)
+      .eq('estado', 'preparando')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (pedido) {
+      const { marcarListo } = await import("@/acciones/caja");
+      const res = await marcarListo(pedido.id);
+      if (!res.success) alert(res.error);
+      else alert("¡Comida marcada como entregada!");
+    } else {
+      alert("No hay pedidos 'preparando' para esta mesa.");
+    }
+    setMesaOcupadaSeleccionada(null);
+  };
+
+  const handleAgregarProductos = () => {
+    if (!mesaOcupadaSeleccionada) return;
+    setMesa(mesaOcupadaSeleccionada);
+    setMesaOcupadaSeleccionada(null);
     router.push("/mozo/menu");
   };
 
@@ -116,6 +154,38 @@ export default function MesasPage() {
           </button>
         ))}
       </div>
+      {/* Modal para Mesas Ocupadas */}
+      {mesaOcupadaSeleccionada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm p-6 flex flex-col shadow-2xl">
+            <h3 className="text-xl font-bold text-center text-zinc-100 mb-2">Mesa {mesaOcupadaSeleccionada.numero}</h3>
+            <p className="text-center text-zinc-400 text-sm mb-6">Esta mesa ya tiene un pedido en curso.</p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={handleMarcarEntregado}
+                className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-4 rounded-xl transition-colors shadow-lg"
+              >
+                Marcar Comida Entregada
+              </button>
+              
+              <button 
+                onClick={handleAgregarProductos}
+                className="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold py-4 rounded-xl transition-colors shadow-lg"
+              >
+                Añadir más productos
+              </button>
+
+              <button 
+                onClick={() => setMesaOcupadaSeleccionada(null)}
+                className="mt-2 text-zinc-500 hover:text-zinc-300 font-medium py-3 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -3,12 +3,13 @@
 import { supabase } from "@/lib/supabase";
 
 interface PedidoPayload {
-  mesa_id: string;
-  mesa_numero: number;
+  mesa_id: string | null;
+  mesa_numero: string | number;
   mozo_id: string;
   mozo_nombre: string;
   total: number;
   notas_generales: string;
+  tipo_pedido?: string;
   items: Array<{
     producto_id: string;
     nombre: string;

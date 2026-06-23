@@ -17,6 +17,7 @@ interface Pedido {
   mesa_id: string;
   total: number;
   estado: string;
+  tipo_pedido: string;
   created_at: string;
   mesas?: { numero: number };
 }
@@ -136,9 +137,15 @@ export default function CajaDashboard() {
         <h2 className="text-xl font-bold mb-4 text-zinc-100 flex items-center gap-2">
           <Receipt size={24} className="text-emerald-500" />
           Comandas Activas
-          <span className="ml-auto bg-zinc-800 text-zinc-300 text-sm py-1 px-3 rounded-full">
+          <span className="bg-zinc-800 text-zinc-300 text-sm py-1 px-3 rounded-full">
             {pedidos.length}
           </span>
+          <a 
+            href="/caja/delivery"
+            className="ml-auto bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-1.5 px-4 rounded-xl transition-colors shadow-md"
+          >
+            + Nuevo Delivery
+          </a>
         </h2>
         
         <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
@@ -154,12 +161,24 @@ export default function CajaDashboard() {
               >
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="bg-zinc-800 text-emerald-400 font-bold px-3 py-1 rounded-lg">
-                      Mesa {pedido.mesas?.numero || '?'}
-                    </span>
-                    <span className="text-sm px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 uppercase">
-                      {pedido.estado}
-                    </span>
+                    {pedido.tipo_pedido === 'delivery' ? (
+                      <span className="bg-indigo-900/60 border border-indigo-700/50 text-indigo-300 font-bold px-3 py-1 rounded-lg flex items-center gap-2">
+                        <span>🛵</span> DELIVERY
+                      </span>
+                    ) : (
+                      <span className="bg-zinc-800 text-emerald-400 font-bold px-3 py-1 rounded-lg">
+                        Mesa {pedido.mesas?.numero || '?'}
+                      </span>
+                    )}
+                    {pedido.estado === 'listo' ? (
+                      <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-blue-900/40 border border-blue-700 text-blue-400 uppercase tracking-wider">
+                        ENTREGADO
+                      </span>
+                    ) : (
+                      <span className="text-sm px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 uppercase">
+                        {pedido.estado}
+                      </span>
+                    )}
                   </div>
                   <div className="text-zinc-500 text-sm mt-2">
                     Pedido #{pedido.id.split('-')[0]}
@@ -186,19 +205,6 @@ export default function CajaDashboard() {
                       </button>
                     ) : (
                       <>
-                        {pedido.estado === 'preparando' && (
-                          <button 
-                            onClick={async () => {
-                              const { marcarListo } = await import("@/acciones/caja");
-                              const res = await marcarListo(pedido.id);
-                              if (!res.success) alert(res.error);
-                              else fetchData();
-                            }}
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-6 rounded-xl transition-colors shadow-md text-sm border border-blue-500/50"
-                          >
-                            Marcar Entregado
-                          </button>
-                        )}
                         <button 
                           onClick={() => openCobroModal(pedido)}
                           className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
@@ -234,7 +240,9 @@ export default function CajaDashboard() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
             
             <div className="p-6 border-b border-zinc-800 text-center">
-              <h3 className="text-xl font-bold text-zinc-100">Cobrar Mesa {pedidoSeleccionado.mesas?.numero}</h3>
+              <h3 className="text-xl font-bold text-zinc-100">
+                Cobrar {pedidoSeleccionado.tipo_pedido === 'delivery' ? 'Delivery' : `Mesa ${pedidoSeleccionado.mesas?.numero}`}
+              </h3>
               <p className="text-3xl font-bold text-emerald-400 mt-2">${pedidoSeleccionado.total.toFixed(2)}</p>
             </div>
 
