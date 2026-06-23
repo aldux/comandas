@@ -28,8 +28,8 @@ export default function CajaLogin() {
       setError("Credenciales incorrectas o usuario no encontrado");
       setLoading(false);
     } else {
-      // Al ser exitoso, las cookies se setean automáticamente y redirigimos
-      router.push("/caja/dashboard");
+      // Forzar recarga completa para que el middleware reciba las cookies frescas
+      window.location.href = "/caja/dashboard";
     }
   };
 
