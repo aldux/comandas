@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { User, LogOut } from "lucide-react";
@@ -16,12 +17,38 @@ export default function MesasPage() {
     return null;
   }
 
-  // Simulación de mesas (esto vendrá de Supabase luego)
-  const mesas = Array.from({ length: 8 }, (_, i) => ({
-    id: `mesa-${i + 1}`,
-    numero: i + 1,
-    estado: i % 3 === 0 ? "ocupada" : "libre", // Simular algunas ocupadas
-  }));
+  const [mesas, setMesas] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    // 1. Carga inicial
+    const fetchMesas = async () => {
+      const { supabase } = await import("@/lib/supabase");
+      const { data } = await supabase.from('mesas').select('*').order('numero');
+      if (data) setMesas(data);
+    };
+    fetchMesas();
+
+    // 2. Suscripción Realtime
+    let mesasSubscription: any;
+    const initRealtime = async () => {
+      const { supabase } = await import("@/lib/supabase");
+      mesasSubscription = supabase
+        .channel('mesas_mozo_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, () => {
+          fetchMesas();
+        })
+        .subscribe();
+    };
+    initRealtime();
+
+    return () => {
+      if (mesasSubscription) {
+        import("@/lib/supabase").then(({ supabase }) => {
+          supabase.removeChannel(mesasSubscription);
+        });
+      }
+    };
+  }, []);
 
   const handleSelectMesa = (mesa: { id: string; numero: number }) => {
     setMesa(mesa);

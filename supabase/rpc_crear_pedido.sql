@@ -23,6 +23,9 @@ BEGIN
         (payload->>'total')::NUMERIC
     ) RETURNING id INTO v_pedido_id;
 
+    -- Cambiar estado de la mesa a ocupada
+    UPDATE mesas SET estado = 'ocupada' WHERE id = (payload->>'mesa_id')::UUID;
+
     -- 2. Recorrer e Insertar los ítems del pedido
     FOR v_item IN SELECT * FROM jsonb_array_elements(payload->'items')
     LOOP
