@@ -63,7 +63,7 @@ export default function VentasPage() {
     const { data, error } = await supabase
       .from('pedidos')
       .select('id, total, metodo_pago, created_at, empleados(nombre), mesas(numero)')
-      .eq('estado', 'cobrado')
+      .in('estado', ['cobrado', 'finalizado'])
       .gte('created_at', inicioDia)
       .lte('created_at', finDia)
       .order('created_at', { ascending: false });
