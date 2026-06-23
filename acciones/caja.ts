@@ -1,0 +1,52 @@
+"use server";
+
+import { supabase } from "@/lib/supabase";
+
+export async function cobrarPedido(pedidoId: string, mesaId: string, metodoPago: "efectivo" | "tarjeta_tpv" | "bizum") {
+  try {
+    // 1. Actualizar el pedido
+    const { error: pedidoError } = await supabase
+      .from("pedidos")
+      .update({
+        estado: "cobrado",
+        metodo_pago: metodoPago,
+      })
+      .eq("id", pedidoId);
+
+    if (pedidoError) {
+      console.error("Error al cobrar pedido:", pedidoError);
+      return { success: false, error: "Error al actualizar el estado del pedido" };
+    }
+
+    // 2. Liberar la mesa
+    const { error: mesaError } = await supabase
+      .from("mesas")
+      .update({ estado: "libre" })
+      .eq("id", mesaId);
+
+    if (mesaError) {
+      console.error("Error al liberar mesa:", mesaError);
+      return { success: false, error: "Error al liberar la mesa" };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error inesperado en cobrarPedido:", error);
+    return { success: false, error: error.message || "Error desconocido" };
+  }
+}
+
+
+export async function anularPedido(pedidoId: string, mesaId: string) {
+  try {
+    const { error: pedidoError } = await supabase.from('pedidos').update({ estado: 'anulado' }).eq('id', pedidoId);
+    if (pedidoError) return { success: false, error: 'Error al anular pedido' };
+
+    const { error: mesaError } = await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId);
+    if (mesaError) return { success: false, error: 'Error al liberar mesa' };
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

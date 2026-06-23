@@ -1,0 +1,87 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useAppStore } from "@/store/useAppStore";
+import { User, LogOut } from "lucide-react";
+
+export default function MesasPage() {
+  const router = useRouter();
+  const { mozoActivo, setMozo, setMesa } = useAppStore();
+
+  // Redirigir a login si no hay mozo activo
+  if (!mozoActivo) {
+    if (typeof window !== "undefined") {
+      router.push("/mozo/login");
+    }
+    return null;
+  }
+
+  // Simulación de mesas (esto vendrá de Supabase luego)
+  const mesas = Array.from({ length: 8 }, (_, i) => ({
+    id: `mesa-${i + 1}`,
+    numero: i + 1,
+    estado: i % 3 === 0 ? "ocupada" : "libre", // Simular algunas ocupadas
+  }));
+
+  const handleSelectMesa = (mesa: { id: string; numero: number }) => {
+    setMesa(mesa);
+    router.push("/mozo/menu");
+  };
+
+  const handleLogout = () => {
+    setMozo(null);
+    router.push("/mozo/login");
+  };
+
+  return (
+    <main className="min-h-screen w-full flex flex-col p-4 bg-zinc-950 text-zinc-50 pb-20">
+      {/* Header */}
+      <header className="flex items-center justify-between py-4 border-b border-zinc-800 mb-6">
+        <div className="flex items-center gap-2">
+          <div className="bg-zinc-800 p-2 rounded-full">
+            <User size={20} className="text-zinc-300" />
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400 uppercase font-semibold tracking-wider">Mozo</p>
+            <h2 className="font-medium">{mozoActivo.nombre}</h2>
+          </div>
+        </div>
+        <button 
+          onClick={handleLogout}
+          className="p-3 text-zinc-400 hover:text-white transition-colors"
+        >
+          <LogOut size={24} />
+        </button>
+      </header>
+
+      {/* Título de sección */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Selecciona una mesa</h1>
+        <p className="text-zinc-400 text-sm mt-1">Toca para tomar un nuevo pedido</p>
+      </div>
+
+      {/* Grid de Mesas */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {mesas.map((mesa) => (
+          <button
+            key={mesa.id}
+            onClick={() => handleSelectMesa(mesa)}
+            className={`
+              flex flex-col items-center justify-center aspect-square rounded-2xl p-4 transition-all
+              active:scale-95 shadow-md border
+              ${mesa.estado === "ocupada" 
+                ? "bg-zinc-800 border-zinc-700 text-zinc-300" 
+                : "bg-emerald-900/30 border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/40"
+              }
+            `}
+          >
+            <span className="text-5xl font-bold mb-2">{mesa.numero}</span>
+            <span className="text-sm font-medium uppercase tracking-wider">
+              {mesa.estado}
+            </span>
+          </button>
+        ))}
+      </div>
+    </main>
+  );
+}
