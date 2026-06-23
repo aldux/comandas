@@ -15,30 +15,44 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Configuración de la impresora térmica
-const printerConfig = {
-  type: PrinterTypes.EPSON, // o STAR
-  interface: 'tcp://192.168.1.100', // Ejemplo para impresora de RED LAN
-  // interface: 'printer:ReceiptPrinter', // Ejemplo para impresora conectada por USB en Windows
+// Base de configuración (sin interface que se llenará dinámicamente)
+const basePrinterConfig = {
+  type: PrinterTypes.EPSON,
   characterSet: CharacterSet.PC852_LATIN2,
   removeSpecialCharacters: false,
   lineCharacter: "=",
   breakLine: BreakLine.WORD,
-  options:{
+  options: {
     timeout: 5000 // 5 segundos de timeout
   }
 };
 
-async function imprimirTicket(id: string, texto: string) {
-  let printer = new ThermalPrinter(printerConfig);
+async function obtenerImpresorasActivas() {
+  const { data, error } = await supabase
+    .from('impresoras')
+    .select('*')
+    .eq('activa', true);
+
+  if (error) {
+    console.error("Error obteniendo impresoras activas:", error);
+    return [];
+  }
+  return data || [];
+}
+
+async function imprimirTicket(id: string, texto: string, impresoraDB: any) {
+  let printer = new ThermalPrinter({
+    ...basePrinterConfig,
+    interface: impresoraDB.interfaz,
+  });
 
   try {
     const isConnected = await printer.isPrinterConnected();
     if (!isConnected) {
-      throw new Error("La impresora no está conectada o no responde.");
+      throw new Error(`La impresora '${impresoraDB.nombre}' (${impresoraDB.interfaz}) no está conectada o no responde.`);
     }
 
-    console.log(`🖨️  Imprimiendo ticket ID: ${id}...`);
+    console.log(`🖨️  Imprimiendo ticket ID: ${id} en '${impresoraDB.nombre}'...`);
     
     printer.alignCenter();
     printer.bold(true);
@@ -53,10 +67,10 @@ async function imprimirTicket(id: string, texto: string) {
     printer.cut();
 
     await printer.execute();
-    console.log(`✅ Ticket ${id} impreso con éxito.`);
+    console.log(`✅ Ticket ${id} impreso con éxito en '${impresoraDB.nombre}'.`);
     return true;
-  } catch (error) {
-    console.error(`❌ Error al imprimir ticket ${id}:`, error);
+  } catch (error: any) {
+    console.error(`❌ Error al imprimir ticket ${id} en '${impresoraDB.nombre}':`, error.message);
     return false;
   }
 }
@@ -64,23 +78,31 @@ async function imprimirTicket(id: string, texto: string) {
 async function procesarTicket(registro: any) {
   const { id, ticket_texto } = registro;
 
-  // Intentamos imprimir
-  const exito = await imprimirTicket(id, ticket_texto);
+  const impresoras = await obtenerImpresorasActivas();
 
-  // Actualizamos el estado en Supabase
-  const nuevoEstado = exito ? 'impreso' : 'error'; // Podríamos agregar un estado 'error' en el enum de la DB si falla, por ahora usemos texto libre o un status alternativo.
-  
-  // Nota: si el enum de la DB no admite 'error', quizás quieras cambiar el schema para permitirlo, 
-  // o simplemente dejarlo 'pendiente' para reintentar. Vamos a intentar setearlo a 'error' si el schema lo permitiese, 
-  // o a 'pendiente' para que se reintente después si prefieres. Asumiendo que el usuario ajustará el Enum si usa 'error'.
-  
-  const { error } = await supabase
-    .from('cola_impresion')
-    .update({ estado: exito ? 'impreso' : 'pendiente' }) // Si el Enum era ('pendiente', 'impreso'), no usamos 'error' para no crashear la DB, lo dejamos pendiente o agregamos log.
-    .eq('id', id);
+  if (impresoras.length === 0) {
+    console.warn(`⚠️ No hay impresoras activas configuradas. El ticket ${id} quedará pendiente.`);
+    return;
+  }
 
-  if (error) {
-    console.error(`Error actualizando el estado del ticket ${id} en la DB:`, error);
+  let algunaImpresoraExitosa = false;
+
+  for (const impresora of impresoras) {
+    const exito = await imprimirTicket(id, ticket_texto, impresora);
+    if (exito) algunaImpresoraExitosa = true;
+  }
+
+  // Si al menos una impresora imprimió, consideramos el ticket "impreso" para no re-imprimir infinitamente.
+  // Podrías ajustar esto para que marque impreso solo si TODAS imprimen.
+  if (algunaImpresoraExitosa) {
+    const { error } = await supabase
+      .from('cola_impresion')
+      .update({ estado: 'impreso' })
+      .eq('id', id);
+
+    if (error) {
+      console.error(`Error actualizando el estado del ticket ${id} en la DB:`, error);
+    }
   }
 }
 
@@ -92,7 +114,8 @@ async function startWorker() {
   const { data: pendientes, error } = await supabase
     .from('cola_impresion')
     .select('*')
-    .eq('estado', 'pendiente');
+    .eq('estado', 'pendiente')
+    .order('created_at', { ascending: true });
 
   if (error) {
     console.error("Error consultando tickets pendientes:", error);

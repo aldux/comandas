@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { LogOut, LayoutDashboard, ReceiptText, Utensils } from "lucide-react";
+import { LogOut, LayoutDashboard, ReceiptText, Utensils, Printer } from "lucide-react";
 
 export default function CajaLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -33,6 +33,13 @@ export default function CajaLayout({ children }: { children: React.ReactNode }) 
           >
             <Utensils size={20} />
             Menú
+          </Link>
+          <Link 
+            href="/caja/impresoras" 
+            className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-xl font-medium transition-colors"
+          >
+            <Printer size={20} />
+            Impresoras
           </Link>
         </nav>
 
