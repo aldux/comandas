@@ -11,8 +11,11 @@ import {
   Receipt, 
   Printer, 
   Download, 
-  Loader2 
+  Loader2,
+  FileText
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Empleado {
   nombre: string;
@@ -128,38 +131,56 @@ export default function VentasPage() {
     setImprimiendo(false);
   };
 
-  const handleExportarCSV = () => {
+  const handleExportarPDF = () => {
     if (ventas.length === 0) {
       alert("No hay ventas para exportar.");
       return;
     }
 
-    // Cabeceras del CSV
-    let csvContent = "Fecha,Hora,Mesa,Mozo,Metodo_Pago,Total\n";
+    const doc = new jsPDF();
+    const fechaStr = new Date().toLocaleDateString('es-ES');
+    
+    // Título y Resumen
+    doc.setFontSize(20);
+    doc.text("Cierre de Caja", 14, 22);
+    
+    doc.setFontSize(12);
+    doc.text(`Fecha: ${fechaStr}`, 14, 30);
+    doc.text(`Total Facturado: €${totales.bruto.toFixed(2)}`, 14, 38);
+    doc.text(`Efectivo: €${totales.efectivo.toFixed(2)}`, 14, 46);
+    doc.text(`Tarjeta: €${totales.tpv.toFixed(2)}`, 14, 54);
+    doc.text(`Bizum: €${totales.bizum.toFixed(2)}`, 14, 62);
+    doc.text(`Apps Delivery: €${(totales.app_delivery || 0).toFixed(2)}`, 14, 70);
+    doc.text(`Total Tickets: ${totales.cantidad}`, 14, 78);
+
+    // Preparar datos para la tabla
+    const tableColumn = ["Hora", "Ticket", "Mesa", "Mozo", "Metodo Pago", "Total"];
+    const tableRows: any[] = [];
 
     ventas.forEach(venta => {
-      const fecha = new Date(venta.created_at);
-      const fString = fecha.toLocaleDateString('es-ES');
-      const hString = fecha.toLocaleTimeString('es-ES');
-      const mesa = venta.mesas?.numero || 'Barra';
-      const mozo = venta.empleados?.nombre || 'N/A';
-      const pago = venta.metodo_pago || 'N/A';
-      const total = venta.total.toFixed(2);
-
-      csvContent += `${fString},${hString},${mesa},${mozo},${pago},${total}\n`;
+      const hora = new Date(venta.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' });
+      const ticket = venta.id.split('-')[0].toUpperCase();
+      const mesa = venta.mesas?.numero || 'Barra/Delivery';
+      const mozo = venta.empleados?.nombre || 'Cajero';
+      const pago = venta.metodo_pago?.replace('_', ' ').toUpperCase();
+      const total = `€${venta.total.toFixed(2)}`;
+      
+      tableRows.push([hora, ticket, mesa, mozo, pago, total]);
     });
 
-    // Crear Blob y enlace de descarga
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    
-    const fileName = `ventas_cierre_${new Date().toISOString().split('T')[0]}.csv`;
-    link.setAttribute("href", url);
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Generar la tabla
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 85,
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129] }, // Emerald-500
+      styles: { fontSize: 10 }
+    });
+
+    // Descargar
+    const fileName = `cierre_caja_${fechaStr.replace(/\//g, '-')}.pdf`;
+    doc.save(fileName);
   };
 
   if (loading) {
@@ -180,11 +201,11 @@ export default function VentasPage() {
         
         <div className="flex gap-3">
           <button 
-            onClick={handleExportarCSV}
-            className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-100 px-4 py-2.5 rounded-lg font-medium transition-all border border-zinc-700"
+            onClick={handleExportarPDF}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-4 py-2.5 rounded-lg font-medium transition-all shadow-lg"
           >
-            <Download size={18} />
-            Exportar CSV
+            <FileText size={18} />
+            Exportar PDF
           </button>
           
           <button 
