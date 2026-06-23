@@ -74,77 +74,78 @@ export default function CheckoutPage() {
 
   if (orderSuccess) {
     return (
-      <main className="min-h-screen w-full flex flex-col items-center justify-center bg-zinc-950 text-zinc-50 p-6">
-        <div className="bg-emerald-900/20 p-6 rounded-full mb-6">
-          <CheckCircle2 size={80} className="text-emerald-500 animate-bounce" />
+      <main className="min-h-screen w-full flex flex-col items-center justify-center bg-surface-base text-zinc-50 p-6 animate-in fade-in duration-500">
+        <div className="bg-emerald-500/10 p-8 rounded-full mb-8 relative">
+          <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full animate-pulse" />
+          <CheckCircle2 size={80} className="text-emerald-500 relative z-10 animate-bounce" />
         </div>
-        <h1 className="text-3xl font-bold text-center mb-2">¡Pedido Enviado!</h1>
-        <p className="text-zinc-400 text-center">La cocina ya lo está preparando...</p>
+        <h1 className="text-4xl font-black text-center mb-3 tracking-tight">¡Enviado!</h1>
+        <p className="text-zinc-400 text-center text-lg">La cocina ya lo está preparando...</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen w-full flex flex-col bg-zinc-950 text-zinc-50 pb-32">
+    <main className="min-h-screen w-full flex flex-col bg-surface-base text-zinc-50 pb-32">
       {/* Header Fijo */}
-      <header className="sticky top-0 z-10 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center gap-3">
+      <header className="sticky top-0 z-20 bg-surface-base/80 backdrop-blur-xl border-b border-zinc-800/50 px-4 py-4 flex items-center gap-4">
         <button 
           onClick={() => router.back()}
           disabled={isSubmitting}
-          className="p-2 -ml-2 rounded-full hover:bg-zinc-800 transition-colors disabled:opacity-50"
+          className="p-2 -ml-2 rounded-xl bg-surface-card border border-zinc-800 hover:bg-surface-hover transition-colors disabled:opacity-50 active:scale-95"
         >
-          <ArrowLeft size={24} />
+          <ArrowLeft size={20} />
         </button>
-        <h1 className="font-bold text-lg leading-tight">Revisión del Pedido</h1>
+        <h1 className="font-bold text-xl leading-tight">Revisión Final</h1>
       </header>
 
       <div className="flex-1 p-4 space-y-6">
         {/* Info principal */}
-        <section className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-zinc-400">Mesa</span>
-            <span className="font-bold text-xl">{mesaActiva.numero}</span>
+        <section className="bg-surface-card border border-zinc-800/50 p-5 rounded-[1.5rem] shadow-sm">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-zinc-500 text-sm font-bold uppercase tracking-widest">Mesa</span>
+            <span className="font-black text-2xl text-white">{mesaActiva.numero}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-zinc-400">Mozo</span>
-            <span className="font-medium">{mozoActivo.nombre}</span>
+            <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Atiende</span>
+            <span className="font-semibold text-brand">{mozoActivo.nombre}</span>
           </div>
         </section>
 
         {/* Resumen del Carrito */}
-        <section className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
-          <h2 className="font-semibold text-zinc-300 border-b border-zinc-800 pb-2 mb-3">Detalle</h2>
-          <div className="space-y-3">
+        <section className="bg-surface-card border border-zinc-800/50 p-5 rounded-[1.5rem] shadow-sm">
+          <h2 className="font-bold text-zinc-300 border-b border-zinc-800/50 pb-3 mb-4 uppercase tracking-widest text-xs">Detalle del Pedido</h2>
+          <div className="space-y-4">
             {carrito.map((item, idx) => (
               <div key={idx} className="flex justify-between items-start">
-                <div>
-                  <div className="font-medium text-zinc-100">
-                    <span className="text-emerald-500 mr-2">{item.cantidad}x</span>
+                <div className="flex-1 pr-4">
+                  <div className="font-semibold text-zinc-100 flex gap-2">
+                    <span className="text-brand font-black">{item.cantidad}x</span>
                     {item.producto.nombre}
                   </div>
-                  {item.notas && <div className="text-xs text-zinc-500 mt-0.5">{item.notas}</div>}
+                  {item.notas && <div className="text-xs text-zinc-400 mt-1 pl-6">↳ {item.notas}</div>}
                 </div>
-                <div className="font-medium">
+                <div className="font-bold text-zinc-300">
                   ${(item.producto.precio * item.cantidad).toFixed(2)}
                 </div>
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center mt-4 pt-3 border-t border-zinc-800 text-lg">
-            <span className="font-bold">Total Final</span>
-            <span className="font-bold text-emerald-400">${calcularTotal().toFixed(2)}</span>
+          <div className="flex justify-between items-center mt-5 pt-4 border-t border-zinc-800/50">
+            <span className="font-bold uppercase tracking-widest text-xs text-zinc-500">Total a Pagar</span>
+            <span className="font-black text-2xl text-white">${calcularTotal().toFixed(2)}</span>
           </div>
         </section>
 
         {/* Notas Adicionales */}
         <section>
-          <label className="block text-sm font-medium text-zinc-400 mb-2">Notas generales del pedido</label>
+          <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 pl-1">Notas para la cocina</label>
           <textarea
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             disabled={isSubmitting}
             placeholder="Ej. Mandar rápido, cliente apurado..."
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[100px] resize-none disabled:opacity-50"
+            className="w-full bg-surface-card border border-zinc-800/50 rounded-[1.5rem] p-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/50 min-h-[120px] resize-none disabled:opacity-50 transition-all shadow-inner"
           />
         </section>
 
@@ -158,11 +159,11 @@ export default function CheckoutPage() {
       </div>
 
       {/* Bottom Action */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent z-20">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-surface-base via-surface-base to-transparent z-20">
         <button 
           onClick={handleConfirmar}
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white p-4 rounded-2xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-70 disabled:active:scale-100"
+          className="w-full flex items-center justify-center gap-3 bg-brand hover:bg-brand-light active:scale-[0.98] text-white p-5 rounded-[1.5rem] font-bold text-lg transition-all shadow-neon disabled:opacity-70 disabled:active:scale-100"
         >
           {isSubmitting ? (
             <>
@@ -171,8 +172,8 @@ export default function CheckoutPage() {
             </>
           ) : (
             <>
-              <CheckCircle2 size={24} />
               Confirmar y Enviar a Cocina
+              <ArrowLeft size={24} className="rotate-180" />
             </>
           )}
         </button>

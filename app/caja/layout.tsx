@@ -1,67 +1,85 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { LogOut, LayoutDashboard, ReceiptText, Utensils, Printer } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { LogOut, LayoutDashboard, ReceiptText, Utensils, Printer, Package } from "lucide-react";
 
 export default function CajaLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const links = [
+    { name: "Dashboard", href: "/caja/dashboard", icon: LayoutDashboard },
+    { name: "Ventas", href: "/caja/ventas", icon: ReceiptText },
+    { name: "Menú", href: "/caja/menu", icon: Utensils },
+    { name: "Impresoras", href: "/caja/impresoras", icon: Printer },
+  ];
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex">
+    <div className="min-h-screen bg-surface-base text-zinc-50 flex">
       {/* Sidebar Lateral */}
-      <aside className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col hidden md:flex">
-        <div className="p-6 border-b border-zinc-800">
-          <h1 className="text-xl font-bold tracking-tight text-emerald-500">ComandasApp</h1>
-          <p className="text-sm text-zinc-400 mt-1">Portal de Caja</p>
+      <aside className="w-[280px] bg-surface-card border-r border-zinc-800/50 flex-col hidden md:flex z-10 shadow-glass">
+        <div className="p-8 pb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center shadow-neon">
+              <Package size={18} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-white">Comandas</h1>
+          </div>
+          <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest pl-11">Terminal de Caja</p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2">
-          <Link 
-            href="/caja/dashboard" 
-            className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-xl font-medium transition-colors"
-          >
-            <LayoutDashboard size={20} />
-            Dashboard
-          </Link>
-          <Link 
-            href="/caja/ventas" 
-            className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-xl font-medium transition-colors"
-          >
-            <ReceiptText size={20} />
-            Ventas
-          </Link>
-          <Link 
-            href="/caja/menu" 
-            className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-xl font-medium transition-colors"
-          >
-            <Utensils size={20} />
-            Menú
-          </Link>
-          <Link 
-            href="/caja/impresoras" 
-            className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-xl font-medium transition-colors"
-          >
-            <Printer size={20} />
-            Impresoras
-          </Link>
+        <nav className="flex-1 px-4 py-4 space-y-1.5">
+          {links.map((link) => {
+            const isActive = pathname?.startsWith(link.href);
+            const Icon = link.icon;
+            
+            return (
+              <Link 
+                key={link.name}
+                href={link.href} 
+                className={`
+                  flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold transition-all duration-200
+                  ${isActive 
+                    ? "bg-brand/10 text-brand shadow-sm border border-brand/20 relative" 
+                    : "text-zinc-400 hover:bg-surface-hover hover:text-zinc-100 border border-transparent"
+                  }
+                `}
+              >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-brand rounded-r-full" />
+                )}
+                <Icon size={20} className={isActive ? "text-brand" : "text-zinc-500"} />
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-4 border-t border-zinc-800">
-          <button className="flex w-full items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-950/30 hover:text-red-300 rounded-xl font-medium transition-colors">
+        <div className="p-4 mb-4">
+          <button className="flex w-full items-center gap-3 px-4 py-3.5 text-red-500 hover:bg-red-500/10 hover:text-red-400 rounded-2xl font-semibold transition-all border border-transparent hover:border-red-500/20 active:scale-95">
             <LogOut size={20} />
-            Cerrar Sesión
+            Cerrar Turno
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header móvil (visible solo en pantallas pequeñas) */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-zinc-900 border-b border-zinc-800">
-          <h1 className="text-lg font-bold text-emerald-500">Caja</h1>
-          <button className="text-zinc-400">
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        {/* Header móvil */}
+        <header className="md:hidden sticky top-0 z-20 flex items-center justify-between p-4 bg-surface-card/80 backdrop-blur-xl border-b border-zinc-800/50">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-brand flex items-center justify-center">
+              <Package size={14} className="text-white" />
+            </div>
+            <h1 className="text-lg font-black text-white">Comandas</h1>
+          </div>
+          <button className="text-zinc-400 hover:text-white transition-colors">
             <LogOut size={20} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-auto p-4 md:p-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8 bg-surface-base">
           {children}
         </div>
       </main>

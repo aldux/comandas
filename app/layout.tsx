@@ -1,8 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({ 
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   themeColor: "#09090b", // zinc-950
@@ -32,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
-      <body className={`${inter.className} bg-zinc-950 text-zinc-50 antialiased overflow-hidden select-none`}>
+    <html lang="es" className={`dark ${outfit.variable}`}>
+      <body className="antialiased overflow-hidden select-none">
         {children}
       </body>
     </html>

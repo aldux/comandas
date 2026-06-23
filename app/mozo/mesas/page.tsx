@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { User, LogOut } from "lucide-react";
 
+import { useRouter } from "next/navigation";
+import { useAppStore } from "@/store/useAppStore";
+import { User, LogOut, ArrowRight, CheckCircle } from "lucide-react";
+
 export default function MesasPage() {
   const router = useRouter();
   const { mozoActivo, setMozo, setMesa, limpiarCarrito } = useAppStore();
@@ -106,79 +110,115 @@ export default function MesasPage() {
   };
 
   return (
-    <main className="min-h-screen w-full flex flex-col p-4 bg-zinc-950 text-zinc-50 pb-20">
+    <main className="min-h-screen w-full flex flex-col p-4 bg-surface-base text-zinc-50 pb-20">
       {/* Header */}
-      <header className="flex items-center justify-between py-4 border-b border-zinc-800 mb-6">
-        <div className="flex items-center gap-2">
-          <div className="bg-zinc-800 p-2 rounded-full">
-            <User size={20} className="text-zinc-300" />
+      <header className="flex items-center justify-between py-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-surface-card border border-zinc-800 p-2.5 rounded-2xl shadow-sm">
+            <User size={20} className="text-brand-light" />
           </div>
           <div>
-            <p className="text-xs text-zinc-400 uppercase font-semibold tracking-wider">Mozo</p>
-            <h2 className="font-medium">{mozoActivo.nombre}</h2>
+            <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Turno Activo</p>
+            <h2 className="font-semibold text-lg leading-tight">{mozoActivo.nombre}</h2>
           </div>
         </div>
         <button 
           onClick={handleLogout}
-          className="p-3 text-zinc-400 hover:text-white transition-colors"
+          className="p-3 text-zinc-500 hover:text-white hover:bg-surface-hover rounded-xl transition-colors active:scale-95"
         >
-          <LogOut size={24} />
+          <LogOut size={22} />
         </button>
       </header>
 
       {/* Título de sección */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Selecciona una mesa</h1>
-        <p className="text-zinc-400 text-sm mt-1">Toca para tomar un nuevo pedido</p>
+      <div className="mb-6 px-1">
+        <h1 className="text-3xl font-black tracking-tight text-white">Salón</h1>
+        <p className="text-zinc-400 text-sm mt-1">Selecciona una mesa para tomar pedido</p>
       </div>
 
       {/* Grid de Mesas */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {mesas.map((mesa) => (
-          <button
-            key={mesa.id}
-            onClick={() => handleSelectMesa(mesa)}
-            className={`
-              flex flex-col items-center justify-center aspect-square rounded-2xl p-4 transition-all
-              active:scale-95 shadow-md border
-              ${mesa.estado === "ocupada" 
-                ? "bg-zinc-800 border-zinc-700 text-zinc-300" 
-                : "bg-emerald-900/30 border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/40"
-              }
-            `}
-          >
-            <span className="text-5xl font-bold mb-2">{mesa.numero}</span>
-            <span className="text-sm font-medium uppercase tracking-wider">
-              {mesa.estado}
-            </span>
-          </button>
-        ))}
+      <div className="grid grid-cols-2 gap-4">
+        {mesas.map((mesa) => {
+          const isOcupada = mesa.estado === "ocupada";
+          
+          return (
+            <button
+              key={mesa.id}
+              onClick={() => handleSelectMesa(mesa)}
+              className={`
+                group relative overflow-hidden flex flex-col items-start justify-between aspect-square rounded-[2rem] p-5 transition-all duration-300 ease-out select-none
+                active:scale-[0.97] border text-left
+                ${isOcupada 
+                  ? "bg-surface-card border-zinc-800/50 hover:border-brand/50 shadow-glass" 
+                  : "bg-surface-base border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                }
+              `}
+            >
+              {/* Indicador de estado */}
+              {isOcupada ? (
+                <>
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand to-brand-light opacity-80" />
+                  <div className="flex w-full justify-between items-center">
+                    <span className="text-zinc-400 font-medium tracking-widest text-xs uppercase">Mesa</span>
+                    <div className="flex items-center gap-1.5 bg-brand/10 text-brand px-2.5 py-1 rounded-full text-[10px] font-bold border border-brand/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+                      Ocupada
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex w-full justify-between items-center">
+                  <span className="text-zinc-500 font-medium tracking-widest text-xs uppercase">Mesa</span>
+                  <div className="text-[10px] uppercase font-bold tracking-wider opacity-50">Libre</div>
+                </div>
+              )}
+
+              <div className="mt-auto w-full">
+                <span className={`text-6xl font-black tracking-tighter ${isOcupada ? 'text-white' : 'text-zinc-600'}`}>
+                  {mesa.numero}
+                </span>
+                
+                {/* Arrow hint for ocupada */}
+                <div className={`mt-2 flex items-center text-sm font-medium transition-all ${isOcupada ? 'text-brand opacity-100' : 'opacity-0 translate-y-2'}`}>
+                  Ver pedido <ArrowRight size={16} className="ml-1" />
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
       {/* Modal para Mesas Ocupadas */}
       {mesaOcupadaSeleccionada && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-sm p-6 flex flex-col shadow-2xl">
-            <h3 className="text-xl font-bold text-center text-zinc-100 mb-2">Mesa {mesaOcupadaSeleccionada.numero}</h3>
-            <p className="text-center text-zinc-400 text-sm mb-6">Esta mesa ya tiene un pedido en curso.</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all">
+          <div className="bg-surface-base border border-zinc-800 rounded-[2rem] w-full max-w-sm p-6 flex flex-col shadow-glass animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+            <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-6 sm:hidden" />
+            
+            <div className="flex items-center justify-center w-16 h-16 bg-surface-card rounded-2xl border border-zinc-800 mx-auto mb-4 shadow-sm">
+              <span className="text-3xl font-black text-white">{mesaOcupadaSeleccionada.numero}</span>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-center text-white mb-2">Mesa Ocupada</h3>
+            <p className="text-center text-zinc-400 text-sm mb-8 px-4">Selecciona una acción para continuar con esta mesa.</p>
             
             <div className="flex flex-col gap-3">
               <button 
                 onClick={handleMarcarEntregado}
-                className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-4 rounded-xl transition-colors shadow-lg"
+                className="flex items-center justify-center gap-2 bg-emerald-600/10 border border-emerald-500/20 text-emerald-500 hover:bg-emerald-600/20 active:scale-[0.98] font-semibold py-4 rounded-2xl transition-all"
               >
-                Marcar Comida Entregada
+                <CheckCircle size={20} />
+                Marcar Entregado
               </button>
               
               <button 
                 onClick={handleAgregarProductos}
-                className="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold py-4 rounded-xl transition-colors shadow-lg"
+                className="flex items-center justify-center gap-2 bg-brand text-white hover:bg-brand-light active:scale-[0.98] font-bold py-4 rounded-2xl transition-all shadow-neon"
               >
-                Añadir más productos
+                Añadir al Pedido
               </button>
 
               <button 
                 onClick={() => setMesaOcupadaSeleccionada(null)}
-                className="mt-2 text-zinc-500 hover:text-zinc-300 font-medium py-3 transition-colors"
+                className="mt-2 text-zinc-500 hover:text-white font-medium py-3 rounded-xl transition-colors active:scale-[0.98]"
               >
                 Cancelar
               </button>

@@ -106,43 +106,46 @@ export default function CajaDashboard() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-6rem)]">
       {/* Columna Izquierda: Mesas */}
-      <section className="lg:w-1/3 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col">
-        <h2 className="text-xl font-bold mb-4 text-zinc-100 flex items-center gap-2">
+      <section className="lg:w-[380px] flex-shrink-0 bg-surface-card border border-zinc-800/50 rounded-[2rem] p-6 flex flex-col shadow-sm">
+        <h2 className="text-xl font-black tracking-tight mb-5 text-white flex items-center gap-2">
           Estado de Mesas
         </h2>
         <div className="grid grid-cols-3 gap-3 overflow-y-auto pr-2 custom-scrollbar">
-          {mesas.map((mesa) => (
-            <div
-              key={mesa.id}
-              className={`
-                aspect-square rounded-xl p-3 flex flex-col items-center justify-center border shadow-sm transition-all
-                ${mesa.estado === 'libre' 
-                  ? 'bg-emerald-900/20 border-emerald-800/40 text-emerald-500' 
-                  : 'bg-red-900/20 border-red-800/40 text-red-500'}
-              `}
-            >
-              <span className="text-3xl font-bold">{mesa.numero}</span>
-              <span className="text-xs font-medium uppercase tracking-wider mt-1">
-                {mesa.estado}
-              </span>
-            </div>
-          ))}
+          {mesas.map((mesa) => {
+            const isLibre = mesa.estado === 'libre';
+            return (
+              <div
+                key={mesa.id}
+                className={`
+                  aspect-square rounded-[1.5rem] p-3 flex flex-col items-center justify-center border transition-all duration-200 cursor-default
+                  ${isLibre 
+                    ? 'bg-surface-base border-zinc-800/50 text-zinc-600' 
+                    : 'bg-surface-card border-brand/40 text-brand shadow-neon'}
+                `}
+              >
+                <span className={`text-3xl font-black ${isLibre ? 'text-zinc-500' : 'text-white'}`}>{mesa.numero}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isLibre ? 'opacity-50' : 'text-brand-light'}`}>
+                  {mesa.estado}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {/* Columna Derecha: Comandas Activas */}
-      <section className="lg:w-2/3 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col">
-        <h2 className="text-xl font-bold mb-4 text-zinc-100 flex items-center gap-2">
-          <Receipt size={24} className="text-emerald-500" />
+      <section className="flex-1 bg-surface-card border border-zinc-800/50 rounded-[2rem] p-6 flex flex-col shadow-sm">
+        <h2 className="text-xl font-black tracking-tight mb-5 text-white flex items-center gap-3">
+          <Receipt size={22} className="text-zinc-400" />
           Comandas Activas
-          <span className="bg-zinc-800 text-zinc-300 text-sm py-1 px-3 rounded-full">
+          <span className="bg-brand/10 text-brand text-xs font-bold py-1 px-3 rounded-xl border border-brand/20">
             {pedidos.length}
           </span>
           <a 
             href="/caja/delivery"
-            className="ml-auto bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-1.5 px-4 rounded-xl transition-colors shadow-md"
+            className="ml-auto bg-surface-base hover:bg-surface-hover text-white text-sm font-semibold py-2 px-5 rounded-xl transition-colors border border-zinc-800"
           >
             + Nuevo Delivery
           </a>
@@ -153,134 +156,146 @@ export default function CajaDashboard() {
             <div className="h-full flex items-center justify-center text-zinc-500 italic">
               No hay comandas activas en este momento.
             </div>
-          ) : (
-            pedidos.map((pedido) => (
-              <div 
-                key={pedido.id} 
-                className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
-              >
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    {pedido.tipo_pedido === 'delivery' ? (
-                      <span className="bg-indigo-900/60 border border-indigo-700/50 text-indigo-300 font-bold px-3 py-1 rounded-lg flex items-center gap-2">
-                        <span>🛵</span> DELIVERY
-                      </span>
-                    ) : (
-                      <span className="bg-zinc-800 text-emerald-400 font-bold px-3 py-1 rounded-lg">
-                        Mesa {pedido.mesas?.numero || '?'}
-                      </span>
-                    )}
-                    {pedido.estado === 'listo' ? (
-                      <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-blue-900/40 border border-blue-700 text-blue-400 uppercase tracking-wider">
-                        ENTREGADO
-                      </span>
-                    ) : (
-                      <span className="text-sm px-2 py-0.5 rounded-full border border-zinc-700 text-zinc-400 uppercase">
-                        {pedido.estado}
-                      </span>
-                    )}
+            pedidos.map((pedido) => {
+              const isDelivery = pedido.tipo_pedido === 'delivery';
+              const isEntregado = pedido.estado === 'listo';
+
+              return (
+                <div 
+                  key={pedido.id} 
+                  className={`border rounded-[1.5rem] p-5 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-5 transition-all
+                    ${isEntregado 
+                      ? 'bg-blue-900/10 border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]' 
+                      : 'bg-surface-base border-zinc-800/80 hover:border-zinc-700'}
+                  `}
+                >
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
+                      {isDelivery ? (
+                        <span className="bg-brand-dark/20 border border-brand/30 text-brand-light text-xs font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 tracking-wider uppercase">
+                          <span>🛵</span> DELIVERY
+                        </span>
+                      ) : (
+                        <span className="bg-zinc-800 text-white font-black px-3 py-1.5 rounded-lg text-sm border border-zinc-700">
+                          Mesa {pedido.mesas?.numero || '?'}
+                        </span>
+                      )}
+                      
+                      {isEntregado ? (
+                        <span className="text-xs font-black px-3 py-1.5 rounded-lg bg-blue-500 text-white uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                          Entregado
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-surface-card border border-zinc-700 text-zinc-400 uppercase tracking-widest">
+                          {pedido.estado}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-zinc-500 text-xs font-bold tracking-widest uppercase mt-3">
+                      Pedido #{pedido.id.split('-')[0]}
+                    </div>
                   </div>
-                  <div className="text-zinc-500 text-sm mt-2">
-                    Pedido #{pedido.id.split('-')[0]}
-                  </div>
-                </div>
                 
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                  <div className="text-right flex-1 sm:flex-none">
-                    <p className="text-xs text-zinc-400">Total</p>
-                    <p className="text-2xl font-bold text-zinc-100">${pedido.total.toFixed(2)}</p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {pedido.estado === 'cobrado' && pedido.tipo_pedido !== 'delivery' ? (
-                      <button 
-                        onClick={async () => {
-                          const { liberarMesa } = await import("@/acciones/caja");
-                          const res = await liberarMesa(pedido.id, pedido.mesa_id);
-                          if (!res.success) alert(res.error);
-                          else fetchData();
-                        }}
-                        className="bg-zinc-100 hover:bg-zinc-300 text-zinc-900 font-bold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
-                      >
-                        Liberar Mesa
-                      </button>
-                    ) : (
-                      <>
-                        {pedido.tipo_pedido === 'delivery' ? (
+                  <div className="flex flex-col xl:flex-row items-start xl:items-center gap-5 w-full xl:w-auto">
+                    <div className="text-left xl:text-right flex-1 xl:flex-none">
+                      <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Total Pagar</p>
+                      <p className="text-3xl font-black text-white">${pedido.total.toFixed(2)}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 w-full xl:w-auto">
+                      {pedido.estado === 'cobrado' && !isDelivery ? (
+                        <button 
+                          onClick={async () => {
+                            const { liberarMesa } = await import("@/acciones/caja");
+                            const res = await liberarMesa(pedido.id, pedido.mesa_id);
+                            if (!res.success) alert(res.error);
+                            else fetchData();
+                          }}
+                          className="flex-1 xl:flex-none bg-zinc-200 hover:bg-white text-zinc-900 font-black py-2.5 px-6 rounded-xl transition-all shadow-sm active:scale-95"
+                        >
+                          Liberar Mesa
+                        </button>
+                      ) : (
+                        <>
+                          {isDelivery ? (
+                            <button 
+                              onClick={async () => {
+                                if (window.confirm("¿Marcar este delivery como entregado al repartidor? Se sumará a las ventas de hoy.")) {
+                                  const { entregarDelivery } = await import("@/acciones/caja");
+                                  const res = await entregarDelivery(pedido.id);
+                                  if (!res.success) alert(res.error);
+                                  else fetchData();
+                                }
+                              }}
+                              className="flex-1 xl:flex-none bg-blue-600 hover:bg-blue-500 text-white font-black py-2.5 px-6 rounded-xl transition-all shadow-[0_0_15px_rgba(59,130,246,0.4)] active:scale-95"
+                            >
+                              Entregado
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => openCobroModal(pedido)}
+                              className="flex-1 xl:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 px-6 rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-95"
+                            >
+                              Cobrar
+                            </button>
+                          )}
                           <button 
                             onClick={async () => {
-                              if (window.confirm("¿Marcar este delivery como entregado al repartidor? Se sumará a las ventas de hoy.")) {
-                                const { entregarDelivery } = await import("@/acciones/caja");
-                                const res = await entregarDelivery(pedido.id);
+                              if (window.confirm("¿Estás seguro de anular este pedido? Esta acción no se puede deshacer.")) {
+                                const { anularPedido } = await import("@/acciones/caja");
+                                const res = await anularPedido(pedido.id, pedido.mesa_id);
                                 if (!res.success) alert(res.error);
                                 else fetchData();
                               }
                             }}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
+                            className="bg-transparent hover:bg-surface-hover text-zinc-500 hover:text-red-400 font-bold py-2.5 px-5 rounded-xl transition-colors text-sm border border-zinc-800 hover:border-red-900/50"
                           >
-                            Entregado
+                            Anular
                           </button>
-                        ) : (
-                          <button 
-                            onClick={() => openCobroModal(pedido)}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"
-                          >
-                            Cobrar
-                          </button>
-                        )}
-                        <button 
-                          onClick={async () => {
-                            if (window.confirm("¿Estás seguro de anular este pedido? Esta acción no se puede deshacer.")) {
-                              const { anularPedido } = await import("@/acciones/caja");
-                              const res = await anularPedido(pedido.id, pedido.mesa_id);
-                              if (!res.success) alert(res.error);
-                              else fetchData();
-                            }
-                          }}
-                          className="bg-zinc-800 hover:bg-red-900/60 text-zinc-300 hover:text-red-400 font-semibold py-1.5 px-6 rounded-xl transition-colors text-sm border border-zinc-700 hover:border-red-900/50"
-                        >
-                          Anular
-                        </button>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </section>
 
       {/* Modal de Cobro */}
       {isModalOpen && pedidoSeleccionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all">
+          <div className="bg-surface-base border border-zinc-800 rounded-[2rem] w-full max-w-md shadow-glass overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             
-            <div className="p-6 border-b border-zinc-800 text-center">
-              <h3 className="text-xl font-bold text-zinc-100">
+            <div className="p-8 pb-6 border-b border-zinc-800/50 text-center bg-surface-card">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-2">
                 Cobrar {pedidoSeleccionado.tipo_pedido === 'delivery' ? 'Delivery' : `Mesa ${pedidoSeleccionado.mesas?.numero}`}
               </h3>
-              <p className="text-3xl font-bold text-emerald-400 mt-2">${pedidoSeleccionado.total.toFixed(2)}</p>
+              <p className="text-5xl font-black text-white">${pedidoSeleccionado.total.toFixed(2)}</p>
             </div>
 
-            <div className="p-6 flex flex-col gap-3">
+            <div className="p-8 flex flex-col gap-3">
               {cobroExitoso ? (
                 <div className="flex flex-col items-center justify-center py-8 text-emerald-500">
-                  <CheckCircle2 size={64} className="mb-4" />
-                  <h4 className="text-xl font-bold text-zinc-100">¡Cobro Registrado!</h4>
-                  <p className="text-zinc-400 mt-1 text-center text-sm px-4">El pedido ha sido marcado como pagado. Recuerde liberar la mesa luego.</p>
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full animate-pulse" />
+                    <CheckCircle2 size={64} className="relative z-10 animate-bounce" />
+                  </div>
+                  <h4 className="text-2xl font-black text-white">¡Cobro Registrado!</h4>
+                  <p className="text-zinc-400 mt-2 text-center text-sm px-4">El pedido ha sido marcado como pagado.</p>
                 </div>
               ) : isProcessing ? (
-                <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
+                <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
                   <Loader2 size={48} className="animate-spin mb-4 text-emerald-500" />
-                  <p>Procesando pago...</p>
+                  <p className="font-bold tracking-widest uppercase text-sm">Procesando...</p>
                 </div>
               ) : (
                 <>
-                  <p className="text-sm font-medium text-zinc-400 mb-2 text-center">Seleccione el método de pago</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2 text-center">Seleccione método de pago</p>
                   
                   <button 
                     onClick={() => handleCobrar('efectivo')}
-                    className="flex items-center justify-center gap-3 w-full bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-100 font-medium py-4 rounded-xl border border-zinc-700 transition-all"
+                    className="flex items-center justify-center gap-3 w-full bg-surface-card hover:bg-surface-hover hover:border-emerald-500/50 active:scale-[0.98] text-white font-bold py-4 rounded-2xl border border-zinc-800 transition-all"
                   >
                     <Banknote size={24} className="text-emerald-500" />
                     Efectivo
@@ -288,7 +303,7 @@ export default function CajaDashboard() {
                   
                   <button 
                     onClick={() => handleCobrar('tarjeta_tpv')}
-                    className="flex items-center justify-center gap-3 w-full bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-100 font-medium py-4 rounded-xl border border-zinc-700 transition-all"
+                    className="flex items-center justify-center gap-3 w-full bg-surface-card hover:bg-surface-hover hover:border-blue-500/50 active:scale-[0.98] text-white font-bold py-4 rounded-2xl border border-zinc-800 transition-all"
                   >
                     <CreditCard size={24} className="text-blue-400" />
                     Tarjeta (TPV)
@@ -296,7 +311,7 @@ export default function CajaDashboard() {
                   
                   <button 
                     onClick={() => handleCobrar('bizum')}
-                    className="flex items-center justify-center gap-3 w-full bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-100 font-medium py-4 rounded-xl border border-zinc-700 transition-all"
+                    className="flex items-center justify-center gap-3 w-full bg-surface-card hover:bg-surface-hover hover:border-indigo-500/50 active:scale-[0.98] text-white font-bold py-4 rounded-2xl border border-zinc-800 transition-all"
                   >
                     <Smartphone size={24} className="text-indigo-400" />
                     Bizum
@@ -304,7 +319,7 @@ export default function CajaDashboard() {
                   
                   <button 
                     onClick={closeCobroModal}
-                    className="mt-4 text-zinc-500 hover:text-zinc-300 py-2 font-medium transition-colors"
+                    className="mt-4 text-zinc-500 hover:text-white py-3 font-bold transition-colors"
                   >
                     Cancelar
                   </button>
