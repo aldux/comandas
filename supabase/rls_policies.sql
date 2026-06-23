@@ -21,13 +21,16 @@ CREATE POLICY "Modificación de empleados por auth" ON empleados FOR ALL TO auth
 
 -- 4. Políticas para 'pedidos' y 'pedido_items' (Transaccionalidad)
 -- Mozos (anon) pueden hacer INSERT para crear el pedido. Caja (authenticated) puede ver y actualizar.
-CREATE POLICY "Creación de pedidos pública" ON pedidos FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "Gestión de pedidos por auth" ON pedidos FOR SELECT, UPDATE TO authenticated USING (true);
+CREATE POLICY "Creación de pedidos pública" ON pedidos FOR INSERT WITH CHECK (true);
+CREATE POLICY "Lectura de pedidos por auth" ON pedidos FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Actualización de pedidos por auth" ON pedidos FOR UPDATE TO authenticated USING (true);
 
-CREATE POLICY "Creación de items pública" ON pedido_items FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "Gestión de items por auth" ON pedido_items FOR SELECT, UPDATE TO authenticated USING (true);
+CREATE POLICY "Creación de items pública" ON pedido_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Lectura de items por auth" ON pedido_items FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Actualización de items por auth" ON pedido_items FOR UPDATE TO authenticated USING (true);
 
 -- 5. Políticas para 'cola_impresion'
 -- Mozos y Caja pueden insertar tickets
-CREATE POLICY "Crear ticket de impresion" ON cola_impresion FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "Lectura y Gestion de impresion por auth" ON cola_impresion FOR SELECT, UPDATE TO authenticated USING (true);
+CREATE POLICY "Crear ticket de impresion" ON cola_impresion FOR INSERT WITH CHECK (true);
+CREATE POLICY "Lectura de impresion por auth" ON cola_impresion FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Actualización de impresion por auth" ON cola_impresion FOR UPDATE TO authenticated USING (true);
