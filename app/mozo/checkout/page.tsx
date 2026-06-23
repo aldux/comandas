@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
@@ -29,7 +29,12 @@ export default function CheckoutPage() {
     return carrito.reduce((total, item) => total + item.producto.precio * item.cantidad, 0);
   };
 
+  const isSubmittingRef = useRef(false);
+
   const handleConfirmar = async () => {
+    if (isSubmittingRef.current) return;
+    
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     setErrorMsg("");
 
@@ -62,6 +67,7 @@ export default function CheckoutPage() {
     } else {
       setErrorMsg(resultado.error || "Ocurrió un error al enviar el pedido.");
       setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 

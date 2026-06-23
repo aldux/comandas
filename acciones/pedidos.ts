@@ -20,74 +20,16 @@ interface PedidoPayload {
 
 export async function crearPedido(payload: PedidoPayload) {
   try {
-    // 1. Insertar el pedido
-    const { data: pedidoData, error: pedidoError } = await supabase
-      .from("pedidos")
-      .insert({
-        mesa_id: payload.mesa_id,
-        mozo_id: payload.mozo_id,
-        estado: "preparando",
-        total: payload.total,
-      })
-      .select("id")
-      .single();
+    // Usamos el RPC transaccional que agrupa la creación del pedido, 
+    // sus ítems y la cola de impresión en una única transacción atómica en Postgres.
+    const { data: pedidoId, error } = await supabase.rpc(
+      "crear_pedido_completo",
+      { payload }
+    );
 
-    if (pedidoError || !pedidoData) {
-      console.error("Error insertando pedido:", pedidoError);
-      return { success: false, error: "Error al crear el pedido principal" };
-    }
-
-    const pedidoId = pedidoData.id;
-
-    // 2. Preparar los items e insertarlos
-    const itemsParaInsertar = payload.items.map((item) => ({
-      pedido_id: pedidoId,
-      producto_id: item.producto_id,
-      cantidad: item.cantidad,
-      precio_unitario: item.precio_unitario,
-      notas: item.notas || null,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("pedido_items")
-      .insert(itemsParaInsertar);
-
-    if (itemsError) {
-      console.error("Error insertando items:", itemsError);
-      return { success: false, error: "Error al guardar los items del pedido" };
-    }
-
-    // 3. Generación del Ticket de Impresión
-    let ticketTexto = `--- NUEVO PEDIDO ---\n`;
-    ticketTexto += `MESA: ${payload.mesa_numero} | MOZO: ${payload.mozo_nombre}\n`;
-    ticketTexto += `--------------------\n`;
-    
-    payload.items.forEach((item) => {
-      ticketTexto += `${item.cantidad}x ${item.nombre} ($${item.precio_unitario})\n`;
-      if (item.notas) {
-        ticketTexto += `   *Nota: ${item.notas}*\n`;
-      }
-    });
-    
-    ticketTexto += `--------------------\n`;
-    if (payload.notas_generales) {
-      ticketTexto += `NOTAS GENERALES:\n${payload.notas_generales}\n`;
-      ticketTexto += `--------------------\n`;
-    }
-    ticketTexto += `TOTAL: $${payload.total.toFixed(2)}\n`;
-
-    // Insertar en cola de impresión
-    const { error: impresionError } = await supabase
-      .from("cola_impresion")
-      .insert({
-        pedido_id: pedidoId,
-        ticket_texto: ticketTexto,
-        estado: "pendiente",
-      });
-
-    if (impresionError) {
-      console.error("Error en cola de impresión:", impresionError);
-      // No rompemos todo el pedido si solo falla la impresión, pero podríamos loguearlo.
+    if (error || !pedidoId) {
+      console.error("Error en RPC crear_pedido_completo:", error);
+      return { success: false, error: "Error al crear el pedido en la base de datos." };
     }
 
     return { success: true, pedido_id: pedidoId };
