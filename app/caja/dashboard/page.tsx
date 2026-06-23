@@ -186,6 +186,19 @@ export default function CajaDashboard() {
                       </button>
                     ) : (
                       <>
+                        {pedido.estado === 'preparando' && (
+                          <button 
+                            onClick={async () => {
+                              const { marcarListo } = await import("@/acciones/caja");
+                              const res = await marcarListo(pedido.id);
+                              if (!res.success) alert(res.error);
+                              else fetchData();
+                            }}
+                            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-6 rounded-xl transition-colors shadow-md text-sm border border-blue-500/50"
+                          >
+                            Marcar Entregado
+                          </button>
+                        )}
                         <button 
                           onClick={() => openCobroModal(pedido)}
                           className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-6 rounded-xl transition-colors shadow-lg active:scale-95"

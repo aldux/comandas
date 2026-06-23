@@ -40,6 +40,16 @@ export async function anularPedido(pedidoId: string, mesaId: string) {
   }
 }
 
+export async function marcarListo(pedidoId: string) {
+  try {
+    const { error } = await supabase.from('pedidos').update({ estado: 'listo' }).eq('id', pedidoId);
+    if (error) return { success: false, error: 'Error al actualizar estado' };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function liberarMesa(pedidoId: string, mesaId: string) {
   try {
     // 1. Cambiar estado del pedido a finalizado (para que desaparezca del dashboard activo)
