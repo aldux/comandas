@@ -13,6 +13,7 @@ export default function CheckoutPage() {
   const [notas, setNotas] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
   // Si no hay carrito, mesa o mozo, volver atrás
   useEffect(() => {
@@ -57,19 +58,33 @@ export default function CheckoutPage() {
     const resultado = await crearPedido(payload);
 
     if (resultado.success) {
-      // Éxito: Limpiamos todo el estado para liberar el dispositivo
-      limpiarCarrito();
-      setMesa(null);
-      setMozo(null);
+      // Éxito: Mostramos pantalla de confirmación
+      setOrderSuccess(true);
       
-      // Redirigir al login
-      router.push("/mozo/login");
+      setTimeout(() => {
+        limpiarCarrito();
+        setMesa(null);
+        // Mantenemos el mozo logueado y lo enviamos a las mesas
+        router.push("/mozo/mesas");
+      }, 2000);
     } else {
       setErrorMsg(resultado.error || "Ocurrió un error al enviar el pedido.");
       setIsSubmitting(false);
       isSubmittingRef.current = false;
     }
   };
+
+  if (orderSuccess) {
+    return (
+      <main className="min-h-screen w-full flex flex-col items-center justify-center bg-zinc-950 text-zinc-50 p-6">
+        <div className="bg-emerald-900/20 p-6 rounded-full mb-6">
+          <CheckCircle2 size={80} className="text-emerald-500 animate-bounce" />
+        </div>
+        <h1 className="text-3xl font-bold text-center mb-2">¡Pedido Enviado!</h1>
+        <p className="text-zinc-400 text-center">La cocina ya lo está preparando...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen w-full flex flex-col bg-zinc-950 text-zinc-50 pb-32">
