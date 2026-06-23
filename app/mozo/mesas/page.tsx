@@ -7,14 +7,18 @@ import { User, LogOut } from "lucide-react";
 
 export default function MesasPage() {
   const router = useRouter();
-  const { mozoActivo, setMozo, setMesa } = useAppStore();
+  const { mozoActivo, setMozo, setMesa, limpiarCarrito } = useAppStore();
 
   // Redirigir a login si no hay mozo activo
   React.useEffect(() => {
     if (!mozoActivo) {
       router.push("/mozo/login");
+    } else {
+      // Siempre que llegamos a la pantalla de mesas, limpiamos cualquier carrito y mesa anterior
+      setMesa(null);
+      limpiarCarrito();
     }
-  }, [mozoActivo, router]);
+  }, [mozoActivo, router, setMesa, limpiarCarrito]);
 
   if (!mozoActivo) {
     return null; // Evitar renderizado mientras redirige

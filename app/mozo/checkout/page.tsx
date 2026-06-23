@@ -62,9 +62,7 @@ export default function CheckoutPage() {
       setOrderSuccess(true);
       
       setTimeout(() => {
-        limpiarCarrito();
-        setMesa(null);
-        // Mantenemos el mozo logueado y lo enviamos a las mesas
+        // Redirigimos sin mutar el estado global aquí para no pisar el useEffect
         router.push("/mozo/mesas");
       }, 2000);
     } else {
