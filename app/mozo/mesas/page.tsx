@@ -3,10 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
-import { User, LogOut } from "lucide-react";
-
-import { useRouter } from "next/navigation";
-import { useAppStore } from "@/store/useAppStore";
 import { User, LogOut, ArrowRight, CheckCircle } from "lucide-react";
 
 export default function MesasPage() {

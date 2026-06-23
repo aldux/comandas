@@ -156,6 +156,7 @@ export default function CajaDashboard() {
             <div className="h-full flex items-center justify-center text-zinc-500 italic">
               No hay comandas activas en este momento.
             </div>
+          ) : (
             pedidos.map((pedido) => {
               const isDelivery = pedido.tipo_pedido === 'delivery';
               const isEntregado = pedido.estado === 'listo';
