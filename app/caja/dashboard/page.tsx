@@ -12,6 +12,14 @@ interface Mesa {
   estado: string;
 }
 
+interface PedidoItem {
+  cantidad: number;
+  notas: string | null;
+  productos?: {
+    nombre: string;
+  };
+}
+
 interface Pedido {
   id: string;
   mesa_id: string;
@@ -20,6 +28,7 @@ interface Pedido {
   tipo_pedido: string;
   created_at: string;
   mesas?: { numero: number };
+  pedido_items?: PedidoItem[];
 }
 
 export default function CajaDashboard() {
@@ -66,7 +75,7 @@ export default function CajaDashboard() {
     // Obtener pedidos activos (preparando, listo o cobrado)
     const { data: pedidosData } = await supabase
       .from('pedidos')
-      .select('*, mesas(numero)')
+      .select('*, mesas(numero), pedido_items(cantidad, notas, productos(nombre))')
       .in('estado', ['preparando', 'listo', 'cobrado'])
       .order('created_at', { ascending: false });
       
@@ -194,7 +203,34 @@ export default function CajaDashboard() {
                     </div>
                     <div className="text-zinc-500 text-xs font-bold tracking-widest uppercase mt-3">
                       Pedido #{pedido.id.split('-')[0]}
+                      <span className="ml-3 font-normal lowercase opacity-80">
+                        {new Date(pedido.created_at).toLocaleString('es-AR', {
+                          day: '2-digit', month: '2-digit', year: '2-digit',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </span>
                     </div>
+
+                    {/* Detalle de los productos pedidos */}
+                    {pedido.pedido_items && pedido.pedido_items.length > 0 && (
+                      <div className="mt-4 bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-3.5 text-sm">
+                        <ul className="space-y-2">
+                          {pedido.pedido_items.map((item, idx) => (
+                            <li key={idx} className="flex flex-col text-zinc-300">
+                              <div className="flex items-start">
+                                <span className="font-black text-brand-light min-w-[28px]">{item.cantidad}x</span>
+                                <span className="font-medium text-white">{item.productos?.nombre || 'Producto'}</span>
+                              </div>
+                              {item.notas && (
+                                <span className="block text-zinc-500 text-xs italic mt-0.5 ml-[28px]">
+                                  Nota: {item.notas}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 
                   <div className="flex flex-col xl:flex-row items-start xl:items-center gap-5 w-full xl:w-auto">
