@@ -139,23 +139,39 @@ export default function MenuPage() {
                     onClick={() => {
                       // TODO: MOCK TEMPORAL PARA DEMOSTRAR LA UI. 
                       // Debes agregar una columna 'opciones' (tipo JSONB) en tu tabla 'productos' en Supabase.
-                      const esHamburguesa = producto.categoria.toLowerCase().includes('hamburguesa');
-                      const mockOpciones = esHamburguesa ? {
-                        agregables: [
-                          { id: 'extra_queso', nombre: 'Extra Queso Cheddar', precioExtra: 1.50 },
-                          { id: 'panceta', nombre: 'Bacon crujiente', precioExtra: 2.00 }
-                        ],
-                        quitables: [
-                          { id: 'sin_tomate', nombre: 'Tomate', precioExtra: 0 },
-                          { id: 'sin_lechuga', nombre: 'Lechuga', precioExtra: 0 },
-                          { id: 'sin_cebolla', nombre: 'Cebolla', precioExtra: 0 }
-                        ],
-                        variantes: [
-                          { id: 'jugosa', nombre: 'Medio (Jugosa)', precioExtra: 0 },
-                          { id: 'cocida', nombre: 'Bien Cocida', precioExtra: 0 },
-                          { id: 'doble', nombre: 'Doble Carne', precioExtra: 3.50 }
-                        ]
-                      } : { agregables: [], quitables: [], variantes: [] };
+                      const cat = producto.categoria.toLowerCase();
+                      const esHamburguesa = cat.includes('hamburguesa') || cat.includes('comida');
+                      const esBebida = cat.includes('bebida') || cat.includes('trago') || cat.includes('cerveza') || cat.includes('refresco');
+                      
+                      let mockOpciones = { agregables: [], quitables: [], variantes: [] };
+                      
+                      if (esHamburguesa) {
+                        mockOpciones = {
+                          agregables: [
+                            { id: 'extra_queso', nombre: 'Extra Queso Cheddar', precioExtra: 1.50 },
+                            { id: 'panceta', nombre: 'Bacon crujiente', precioExtra: 2.00 }
+                          ],
+                          quitables: [
+                            { id: 'sin_tomate', nombre: 'Tomate', precioExtra: 0 },
+                            { id: 'sin_lechuga', nombre: 'Lechuga', precioExtra: 0 },
+                            { id: 'sin_cebolla', nombre: 'Cebolla', precioExtra: 0 }
+                          ],
+                          variantes: [
+                            { id: 'jugosa', nombre: 'Medio (Jugosa)', precioExtra: 0 },
+                            { id: 'cocida', nombre: 'Bien Cocida', precioExtra: 0 },
+                            { id: 'doble', nombre: 'Doble Carne', precioExtra: 3.50 }
+                          ]
+                        } as any;
+                      } else if (esBebida) {
+                        mockOpciones = {
+                          agregables: [],
+                          quitables: [],
+                          variantes: [
+                            { id: 'con_hielo', nombre: 'Con Hielo', precioExtra: 0 },
+                            { id: 'sin_hielo', nombre: 'Sin Hielo', precioExtra: 0 }
+                          ]
+                        } as any;
+                      }
 
                       const prodMenu: ProductoMenu = {
                         id: producto.id,

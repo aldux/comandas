@@ -3,12 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
+import { useOrderStore } from "@/store/orderStore";
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { crearPedido } from "@/acciones/pedidos";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { mozoActivo, mesaActiva, carrito, limpiarCarrito, setMozo, setMesa } = useAppStore();
+  const { mozoActivo, mesaActiva, setMozo, setMesa } = useAppStore();
+  const cart = useOrderStore(state => state.cart);
+  const clearCart = useOrderStore(state => state.clearCart);
   
   const [notas, setNotas] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,17 +20,17 @@ export default function CheckoutPage() {
 
   // Si no hay carrito, mesa o mozo, volver atrás
   useEffect(() => {
-    if (!mozoActivo || !mesaActiva || carrito.length === 0) {
+    if (!mozoActivo || !mesaActiva || cart.length === 0) {
       router.replace("/mozo/mesas");
     }
-  }, [mozoActivo, mesaActiva, carrito, router]);
+  }, [mozoActivo, mesaActiva, cart, router]);
 
-  if (!mozoActivo || !mesaActiva || carrito.length === 0) {
+  if (!mozoActivo || !mesaActiva || cart.length === 0) {
     return null; // Evitar renderizado mientras redirige
   }
 
   const calcularTotal = () => {
-    return carrito.reduce((total, item) => total + item.producto.precio * item.cantidad, 0);
+    return cart.reduce((total, item) => total + item.precioTotal, 0);
   };
 
   const isSubmittingRef = useRef(false);
@@ -39,6 +42,14 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     setErrorMsg("");
 
+    const formatSelecciones = (selecciones: any) => {
+      const parts = [];
+      if (selecciones.variante) parts.push(`Variante: ${selecciones.variante.nombre}`);
+      if (selecciones.agregados.length > 0) parts.push(`Extra: ${selecciones.agregados.map((a: any) => a.nombre).join(', ')}`);
+      if (selecciones.quitados.length > 0) parts.push(`Sin: ${selecciones.quitados.map((q: any) => q.nombre).join(', ')}`);
+      return parts.join(' | ');
+    };
+
     const payload = {
       mesa_id: mesaActiva.id,
       mesa_numero: mesaActiva.numero,
@@ -46,20 +57,21 @@ export default function CheckoutPage() {
       mozo_nombre: mozoActivo.nombre,
       total: calcularTotal(),
       notas_generales: notas,
-      items: carrito.map((item) => ({
+      items: cart.map((item) => ({
         producto_id: item.producto.id,
         nombre: item.producto.nombre,
         cantidad: item.cantidad,
-        precio_unitario: item.producto.precio,
-        notas: item.notas,
+        precio_unitario: item.precioUnitario,
+        notas: formatSelecciones(item.selecciones),
       })),
     };
 
     const resultado = await crearPedido(payload);
 
     if (resultado.success) {
-      // Éxito: Mostramos pantalla de confirmación
+      // Éxito: Mostramos pantalla de confirmación y limpiamos carrito global
       setOrderSuccess(true);
+      clearCart();
       
       setTimeout(() => {
         // Redirigimos sin mutar el estado global aquí para no pisar el useEffect
@@ -116,20 +128,30 @@ export default function CheckoutPage() {
         <section className="bg-surface-card border border-zinc-800/50 p-5 rounded-[1.5rem] shadow-sm">
           <h2 className="font-bold text-zinc-300 border-b border-zinc-800/50 pb-3 mb-4 uppercase tracking-widest text-xs">Detalle del Pedido</h2>
           <div className="space-y-4">
-            {carrito.map((item, idx) => (
-              <div key={idx} className="flex justify-between items-start">
-                <div className="flex-1 pr-4">
-                  <div className="font-semibold text-zinc-100 flex gap-2">
-                    <span className="text-brand font-black">{item.cantidad}x</span>
-                    {item.producto.nombre}
+            {cart.map((item, idx) => {
+              const formatSeleccionesDisplay = (selecciones: any) => {
+                const parts = [];
+                if (selecciones.variante) parts.push(`Variante: ${selecciones.variante.nombre}`);
+                if (selecciones.agregados.length > 0) parts.push(`Extra: ${selecciones.agregados.map((a: any) => a.nombre).join(', ')}`);
+                if (selecciones.quitados.length > 0) parts.push(`Sin: ${selecciones.quitados.map((q: any) => q.nombre).join(', ')}`);
+                return parts.join(' | ');
+              };
+              const notasItem = formatSeleccionesDisplay(item.selecciones);
+              return (
+                <div key={idx} className="flex justify-between items-start">
+                  <div className="flex-1 pr-4">
+                    <div className="font-semibold text-zinc-100 flex gap-2">
+                      <span className="text-brand font-black">{item.cantidad}x</span>
+                      {item.producto.nombre}
+                    </div>
+                    {notasItem && <div className="text-xs text-zinc-400 mt-1 pl-6">↳ {notasItem}</div>}
                   </div>
-                  {item.notas && <div className="text-xs text-zinc-400 mt-1 pl-6">↳ {item.notas}</div>}
+                  <div className="font-bold text-zinc-300">
+                    ${item.precioTotal.toFixed(2)}
+                  </div>
                 </div>
-                <div className="font-bold text-zinc-300">
-                  ${(item.producto.precio * item.cantidad).toFixed(2)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex justify-between items-center mt-5 pt-4 border-t border-zinc-800/50">
             <span className="font-bold uppercase tracking-widest text-xs text-zinc-500">Total a Pagar</span>
