@@ -3,23 +3,30 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore, Producto } from "@/store/useAppStore";
+import { useOrderStore, ProductoMenu, Selecciones } from "@/store/orderStore";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Plus, Minus, ShoppingCart, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Minus, ShoppingCart, Loader2, Trash2 } from "lucide-react";
+import ProductCustomizer from "@/components/ProductCustomizer";
 
 export default function CajaDeliveryMenuPage() {
   const router = useRouter();
-  const { carrito, agregarAlCarrito, quitarDelCarrito, limpiarCarrito } = useAppStore();
+  const clearAppCart = useAppStore(state => state.limpiarCarrito);
+  const { cart, addToCart, removeFromCart, clearCart } = useOrderStore();
   
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [categoriaActiva, setCategoriaActiva] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
+  // Estados del Customizer
+  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoMenu | null>(null);
+
   useEffect(() => {
     // Al entrar a la ruta de delivery, limpiamos el carrito por si quedó algo colgado
-    limpiarCarrito();
+    clearAppCart();
+    clearCart();
     fetchProductos();
-  }, [limpiarCarrito]);
+  }, [clearAppCart, clearCart]);
 
   const fetchProductos = async () => {
     const { data, error } = await supabase
@@ -41,16 +48,20 @@ export default function CajaDeliveryMenuPage() {
   const productosFiltrados = productos.filter((p) => p.categoria === categoriaActiva);
 
   const getCantidadEnCarrito = (productoId: string) => {
-    return carrito
+    return cart
       .filter((item) => item.producto.id === productoId)
       .reduce((total, item) => total + item.cantidad, 0);
   };
 
   const calcularTotal = () => {
-    return carrito.reduce((total, item) => total + item.producto.precio * item.cantidad, 0);
+    return cart.reduce((total, item) => total + item.precioTotal, 0);
   };
 
-  const totalItems = carrito.reduce((total, item) => total + item.cantidad, 0);
+  const totalItems = cart.reduce((total, item) => total + item.cantidad, 0);
+
+  const handleAddToCart = (prod: ProductoMenu, selecciones: Selecciones) => {
+    addToCart(prod, selecciones);
+  };
 
   if (loading) {
     return (
@@ -121,7 +132,12 @@ export default function CajaDeliveryMenuPage() {
                     
                     <div className="flex items-center gap-3 bg-zinc-900 rounded-full p-1 border border-zinc-800">
                       <button
-                        onClick={() => quitarDelCarrito(producto.id)}
+                        onClick={() => {
+                          const cartItems = cart.filter(item => item.producto.id === producto.id);
+                          if (cartItems.length > 0) {
+                            removeFromCart(cartItems[cartItems.length - 1].cartItemId);
+                          }
+                        }}
                         disabled={cantidad === 0}
                         className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-300 active:bg-zinc-700 disabled:opacity-30 transition-all"
                       >
@@ -129,7 +145,52 @@ export default function CajaDeliveryMenuPage() {
                       </button>
                       <span className="w-6 text-center font-bold text-lg">{cantidad > 0 ? cantidad : ""}</span>
                       <button
-                        onClick={() => agregarAlCarrito(producto)}
+                        onClick={() => {
+                          // TODO: MOCK TEMPORAL PARA DEMOSTRAR LA UI. 
+                          // Debes agregar una columna 'opciones' (tipo JSONB) en tu tabla 'productos' en Supabase.
+                          const cat = producto.categoria.toLowerCase();
+                          const esHamburguesa = cat.includes('hamburguesa') || cat.includes('comida');
+                          const esBebida = cat.includes('bebida') || cat.includes('trago') || cat.includes('cerveza') || cat.includes('refresco');
+                          
+                          let mockOpciones = { agregables: [], quitables: [], variantes: [] };
+                          
+                          if (esHamburguesa) {
+                            mockOpciones = {
+                              agregables: [
+                                { id: 'extra_queso', nombre: 'Extra Queso Cheddar', precioExtra: 1.50 },
+                                { id: 'panceta', nombre: 'Bacon crujiente', precioExtra: 2.00 }
+                              ],
+                              quitables: [
+                                { id: 'sin_tomate', nombre: 'Tomate', precioExtra: 0 },
+                                { id: 'sin_lechuga', nombre: 'Lechuga', precioExtra: 0 },
+                                { id: 'sin_cebolla', nombre: 'Cebolla', precioExtra: 0 }
+                              ],
+                              variantes: [
+                                { id: 'jugosa', nombre: 'Medio (Jugosa)', precioExtra: 0 },
+                                { id: 'cocida', nombre: 'Bien Cocida', precioExtra: 0 },
+                                { id: 'doble', nombre: 'Doble Carne', precioExtra: 3.50 }
+                              ]
+                            } as any;
+                          } else if (esBebida) {
+                            mockOpciones = {
+                              agregables: [],
+                              quitables: [],
+                              variantes: [
+                                { id: 'con_hielo', nombre: 'Con Hielo', precioExtra: 0 },
+                                { id: 'sin_hielo', nombre: 'Sin Hielo', precioExtra: 0 }
+                              ]
+                            } as any;
+                          }
+
+                          const prodMenu: ProductoMenu = {
+                            id: producto.id,
+                            nombre: producto.nombre,
+                            categoria: producto.categoria as any,
+                            precioBase: producto.precio,
+                            opciones: (producto as any).opciones || mockOpciones
+                          };
+                          setProductoSeleccionado(prodMenu);
+                        }}
                         className="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-600 text-white active:bg-emerald-500 transition-all"
                       >
                         <Plus size={20} />
@@ -150,19 +211,38 @@ export default function CajaDeliveryMenuPage() {
           </h2>
           
           <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-            {carrito.length === 0 ? (
+            {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-sm italic opacity-50">
                 <ShoppingCart size={48} className="mb-2" />
                 <p>El carrito está vacío</p>
               </div>
             ) : (
-              carrito.map((item) => (
-                <div key={item.producto.id} className="flex justify-between items-start text-sm border-b border-zinc-800 pb-2">
-                  <div className="flex gap-2">
+              cart.map((item) => (
+                <div key={item.cartItemId} className="flex justify-between items-start text-sm border-b border-zinc-800 pb-2">
+                  <div className="flex-1 flex gap-2">
                     <span className="font-bold text-emerald-400">{item.cantidad}x</span>
-                    <span className="text-zinc-300">{item.producto.nombre}</span>
+                    <div className="flex flex-col">
+                      <span className="text-zinc-300">{item.producto.nombre}</span>
+                      {(item.selecciones.variante || item.selecciones.agregados.length > 0 || item.selecciones.quitados.length > 0) && (
+                        <span className="text-xs text-zinc-500 mt-1">
+                          {[
+                            item.selecciones.variante?.nombre,
+                            ...item.selecciones.agregados.map(a => `+${a.nombre}`),
+                            ...item.selecciones.quitados.map(q => `-${q.nombre}`)
+                          ].filter(Boolean).join(', ')}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-medium text-zinc-400">${(item.producto.precio * item.cantidad).toFixed(2)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-zinc-400">${item.precioTotal.toFixed(2)}</span>
+                    <button 
+                      onClick={() => removeFromCart(item.cartItemId)}
+                      className="text-red-500 hover:text-red-400 p-1"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -185,6 +265,14 @@ export default function CajaDeliveryMenuPage() {
         </div>
 
       </div>
+
+      {/* Modal de Personalización */}
+      <ProductCustomizer
+        isOpen={!!productoSeleccionado}
+        onClose={() => setProductoSeleccionado(null)}
+        producto={productoSeleccionado}
+        onAddToCart={handleAddToCart}
+      />
     </div>
   );
 }

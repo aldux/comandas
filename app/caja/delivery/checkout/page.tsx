@@ -2,32 +2,32 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/store/useAppStore";
+import { useOrderStore } from "@/store/orderStore";
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { crearPedido } from "@/acciones/pedidos";
 
 export default function CajaDeliveryCheckoutPage() {
   const router = useRouter();
-  const { carrito, limpiarCarrito } = useAppStore();
+  const { cart, clearCart } = useOrderStore();
   
   const [notas, setNotas] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // Si no hay carrito, volver atrás
+  // Si no hay carrito y no estamos en la pantalla de éxito, volver atrás
   useEffect(() => {
-    if (carrito.length === 0) {
+    if (!orderSuccess && cart.length === 0) {
       router.replace("/caja/delivery");
     }
-  }, [carrito, router]);
+  }, [cart, orderSuccess, router]);
 
-  if (carrito.length === 0) {
+  if (cart.length === 0 && !orderSuccess) {
     return null; 
   }
 
   const calcularTotal = () => {
-    return carrito.reduce((total, item) => total + item.producto.precio * item.cantidad, 0);
+    return cart.reduce((total, item) => total + item.precioTotal, 0);
   };
 
   const isSubmittingRef = useRef(false);
@@ -39,6 +39,14 @@ export default function CajaDeliveryCheckoutPage() {
     setIsSubmitting(true);
     setErrorMsg("");
 
+    const formatSelecciones = (selecciones: any) => {
+      const parts = [];
+      if (selecciones.variante) parts.push(`Variante: ${selecciones.variante.nombre}`);
+      if (selecciones.agregados.length > 0) parts.push(`Extra: ${selecciones.agregados.map((a: any) => a.nombre).join(', ')}`);
+      if (selecciones.quitados.length > 0) parts.push(`Sin: ${selecciones.quitados.map((q: any) => q.nombre).join(', ')}`);
+      return parts.join(' | ');
+    };
+
     const payload = {
       mesa_id: null,
       mesa_numero: "DELIVERY",
@@ -47,12 +55,12 @@ export default function CajaDeliveryCheckoutPage() {
       tipo_pedido: "delivery",
       total: calcularTotal(),
       notas_generales: notas,
-      items: carrito.map((item) => ({
+      items: cart.map((item) => ({
         producto_id: item.producto.id,
         nombre: item.producto.nombre,
         cantidad: item.cantidad,
-        precio_unitario: item.producto.precio,
-        notas: item.notas,
+        precio_unitario: item.precioUnitario,
+        notas: formatSelecciones(item.selecciones),
       })),
     };
 
@@ -60,6 +68,7 @@ export default function CajaDeliveryCheckoutPage() {
 
     if (resultado.success) {
       setOrderSuccess(true);
+      clearCart();
       setTimeout(() => {
         router.push("/caja/dashboard");
       }, 2000);
@@ -111,20 +120,30 @@ export default function CajaDeliveryCheckoutPage() {
         <section className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl">
           <h2 className="font-semibold text-zinc-300 border-b border-zinc-800 pb-3 mb-4">Detalle del Pedido</h2>
           <div className="space-y-4">
-            {carrito.map((item, idx) => (
-              <div key={idx} className="flex justify-between items-start">
-                <div>
-                  <div className="font-medium text-zinc-100 text-lg">
-                    <span className="text-emerald-500 mr-2">{item.cantidad}x</span>
-                    {item.producto.nombre}
+            {cart.map((item, idx) => {
+              const formatSeleccionesDisplay = (selecciones: any) => {
+                const parts = [];
+                if (selecciones.variante) parts.push(`Variante: ${selecciones.variante.nombre}`);
+                if (selecciones.agregados.length > 0) parts.push(`Extra: ${selecciones.agregados.map((a: any) => a.nombre).join(', ')}`);
+                if (selecciones.quitados.length > 0) parts.push(`Sin: ${selecciones.quitados.map((q: any) => q.nombre).join(', ')}`);
+                return parts.join(' | ');
+              };
+              const notasItem = formatSeleccionesDisplay(item.selecciones);
+              return (
+                <div key={idx} className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium text-zinc-100 text-lg">
+                      <span className="text-emerald-500 mr-2">{item.cantidad}x</span>
+                      {item.producto.nombre}
+                    </div>
+                    {notasItem && <div className="text-sm text-zinc-500 mt-1">↳ {notasItem}</div>}
                   </div>
-                  {item.notas && <div className="text-sm text-zinc-500 mt-1">Nota: {item.notas}</div>}
+                  <div className="font-medium text-lg text-zinc-300">
+                    ${item.precioTotal.toFixed(2)}
+                  </div>
                 </div>
-                <div className="font-medium text-lg text-zinc-300">
-                  ${(item.producto.precio * item.cantidad).toFixed(2)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex justify-between items-center mt-6 pt-4 border-t border-zinc-800 text-xl">
             <span className="font-bold text-zinc-100">Total Final</span>
