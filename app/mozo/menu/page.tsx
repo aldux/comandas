@@ -3,17 +3,22 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore, Producto } from "@/store/useAppStore";
+import { useOrderStore, ProductoMenu } from "@/store/orderStore";
+import ProductCustomizer from "@/components/ProductCustomizer";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Plus, Minus, ShoppingCart, Loader2 } from "lucide-react";
 
 export default function MenuPage() {
   const router = useRouter();
-  const { mozoActivo, mesaActiva, carrito, agregarAlCarrito, quitarDelCarrito } = useAppStore();
+  const { mozoActivo, mesaActiva } = useAppStore();
+  const cart = useOrderStore(state => state.cart);
+  const addToCart = useOrderStore(state => state.addToCart);
   
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [categoriaActiva, setCategoriaActiva] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoMenu | null>(null);
 
   useEffect(() => {
     // Si no hay sesión, volver al login
@@ -46,16 +51,16 @@ export default function MenuPage() {
   const productosFiltrados = productos.filter((p) => p.categoria === categoriaActiva);
 
   const getCantidadEnCarrito = (productoId: string) => {
-    return carrito
+    return cart
       .filter((item) => item.producto.id === productoId)
       .reduce((total, item) => total + item.cantidad, 0);
   };
 
   const calcularTotal = () => {
-    return carrito.reduce((total, item) => total + item.producto.precio * item.cantidad, 0);
+    return cart.reduce((total, item) => total + item.precioTotal, 0);
   };
 
-  const totalItems = carrito.reduce((total, item) => total + item.cantidad, 0);
+  const totalItems = cart.reduce((total, item) => total + item.cantidad, 0);
 
   if (loading) {
     return (
@@ -124,21 +129,24 @@ export default function MenuPage() {
                 </div>
                 
                 <div className="flex items-center gap-3 bg-surface-base rounded-2xl p-1.5 border border-zinc-800/50 shadow-inner">
-                  <button
-                    onClick={() => quitarDelCarrito(producto.id)}
-                    disabled={cantidad === 0}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-card border border-zinc-800 text-zinc-300 active:scale-95 disabled:opacity-30 disabled:active:scale-100 transition-all"
-                  >
-                    <Minus size={18} />
-                  </button>
-                  
-                  <span className={`w-4 text-center font-black text-lg ${isSelected ? 'text-brand' : 'text-zinc-500'}`}>
-                    {cantidad > 0 ? cantidad : ""}
-                  </span>
+                  {cantidad > 0 && (
+                    <span className="w-8 text-center font-black text-lg text-brand">
+                      {cantidad}
+                    </span>
+                  )}
                   
                   <button
-                    onClick={() => agregarAlCarrito(producto)}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-brand hover:bg-brand-light text-white active:scale-95 transition-all shadow-md"
+                    onClick={() => {
+                      const prodMenu: ProductoMenu = {
+                        id: producto.id,
+                        nombre: producto.nombre,
+                        categoria: producto.categoria as any,
+                        precioBase: producto.precio,
+                        opciones: (producto as any).opciones || { agregables: [], quitables: [], variantes: [] }
+                      };
+                      setProductoSeleccionado(prodMenu);
+                    }}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-brand hover:bg-brand-light text-white active:scale-95 transition-all shadow-md ml-auto"
                   >
                     <Plus size={18} />
                   </button>
@@ -169,6 +177,15 @@ export default function MenuPage() {
           </div>
         </div>
       )}
+      {/* Modal Customizer */}
+      <ProductCustomizer
+        isOpen={!!productoSeleccionado}
+        producto={productoSeleccionado}
+        onClose={() => setProductoSeleccionado(null)}
+        onAddToCart={(producto, selecciones) => {
+          addToCart(producto, selecciones, 1);
+        }}
+      />
     </main>
   );
 }
