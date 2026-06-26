@@ -137,12 +137,32 @@ export default function MenuPage() {
                   
                   <button
                     onClick={() => {
+                      // TODO: MOCK TEMPORAL PARA DEMOSTRAR LA UI. 
+                      // Debes agregar una columna 'opciones' (tipo JSONB) en tu tabla 'productos' en Supabase.
+                      const esHamburguesa = producto.categoria.toLowerCase().includes('hamburguesa');
+                      const mockOpciones = esHamburguesa ? {
+                        agregables: [
+                          { id: 'extra_queso', nombre: 'Extra Queso Cheddar', precioExtra: 1.50 },
+                          { id: 'panceta', nombre: 'Bacon crujiente', precioExtra: 2.00 }
+                        ],
+                        quitables: [
+                          { id: 'sin_tomate', nombre: 'Tomate', precioExtra: 0 },
+                          { id: 'sin_lechuga', nombre: 'Lechuga', precioExtra: 0 },
+                          { id: 'sin_cebolla', nombre: 'Cebolla', precioExtra: 0 }
+                        ],
+                        variantes: [
+                          { id: 'jugosa', nombre: 'Medio (Jugosa)', precioExtra: 0 },
+                          { id: 'cocida', nombre: 'Bien Cocida', precioExtra: 0 },
+                          { id: 'doble', nombre: 'Doble Carne', precioExtra: 3.50 }
+                        ]
+                      } : { agregables: [], quitables: [], variantes: [] };
+
                       const prodMenu: ProductoMenu = {
                         id: producto.id,
                         nombre: producto.nombre,
                         categoria: producto.categoria as any,
                         precioBase: producto.precio,
-                        opciones: (producto as any).opciones || { agregables: [], quitables: [], variantes: [] }
+                        opciones: (producto as any).opciones || mockOpciones
                       };
                       setProductoSeleccionado(prodMenu);
                     }}
