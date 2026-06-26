@@ -18,14 +18,14 @@ export default function CheckoutPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // Si no hay carrito, mesa o mozo, volver atrás
+  // Si no hay carrito, mesa o mozo y no estamos en la pantalla de éxito, volver atrás
   useEffect(() => {
-    if (!mozoActivo || !mesaActiva || cart.length === 0) {
+    if (!orderSuccess && (!mozoActivo || !mesaActiva || cart.length === 0)) {
       router.replace("/mozo/mesas");
     }
-  }, [mozoActivo, mesaActiva, cart, router]);
+  }, [mozoActivo, mesaActiva, cart, orderSuccess, router]);
 
-  if (!mozoActivo || !mesaActiva || cart.length === 0) {
+  if (!orderSuccess && (!mozoActivo || !mesaActiva || cart.length === 0)) {
     return null; // Evitar renderizado mientras redirige
   }
 
