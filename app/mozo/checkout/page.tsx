@@ -20,13 +20,17 @@ export default function CheckoutPage() {
 
   // Si no hay carrito, mesa o mozo y no estamos en la pantalla de éxito, volver atrás
   useEffect(() => {
-    if (!orderSuccess && (!mozoActivo || !mesaActiva || cart.length === 0)) {
+    if (!mozoActivo || !mesaActiva || (!orderSuccess && cart.length === 0)) {
       router.replace("/mozo/mesas");
     }
   }, [mozoActivo, mesaActiva, cart, orderSuccess, router]);
 
-  if (!orderSuccess && (!mozoActivo || !mesaActiva || cart.length === 0)) {
-    return null; // Evitar renderizado mientras redirige
+  if (!mozoActivo || !mesaActiva) {
+    return null; // TS narrowing: Asegura que no son null
+  }
+
+  if (cart.length === 0 && !orderSuccess) {
+    return null; // Evitar renderizado del checkout vacío
   }
 
   const calcularTotal = () => {
