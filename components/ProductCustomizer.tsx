@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
+import { Modificador, ProductoMenu, Selecciones } from '@/store/orderStore';
 
-export interface Modificador {
-  id: string;
-  nombre: string;
-  precioExtra: number;
-}
-
-export interface ProductoMenu {
-  id: string;
-  nombre: string;
-  categoria: 'comida' | 'bebida';
-  precioBase: number;
-  opciones: {
-    agregables: Modificador[];
-    quitables: Modificador[];
-    variantes: Modificador[];
-  };
-}
-
-export interface Selecciones {
+interface SeleccionesState {
   agregables: string[]; // IDs de agregables seleccionados
   quitables: string[]; // IDs de quitables seleccionados
   varianteId: string | null; // ID de la variante seleccionada
@@ -38,7 +21,7 @@ export default function ProductCustomizer({
   producto,
   onAddToCart,
 }: ProductCustomizerProps) {
-  const [selecciones, setSelecciones] = useState<Selecciones>({
+  const [selecciones, setSelecciones] = useState<SeleccionesState>({
     agregables: [],
     quitables: [],
     varianteId: null,
@@ -108,7 +91,20 @@ export default function ProductCustomizer({
       return;
     }
     
-    onAddToCart(producto, selecciones);
+    // Mapear los IDs locales a los objetos completos para el orderStore
+    const seleccionesParaStore: Selecciones = {
+      variante: selecciones.varianteId 
+        ? producto.opciones.variantes.find(v => v.id === selecciones.varianteId) || null
+        : null,
+      agregados: selecciones.agregables
+        .map(id => producto.opciones.agregables.find(a => a.id === id))
+        .filter((a): a is Modificador => a !== undefined),
+      quitados: selecciones.quitables
+        .map(id => producto.opciones.quitables.find(q => q.id === id))
+        .filter((q): q is Modificador => q !== undefined)
+    };
+    
+    onAddToCart(producto, seleccionesParaStore);
     onClose();
   };
 
